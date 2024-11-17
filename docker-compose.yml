@@ -1,0 +1,23 @@
+services:
+  app:
+    build: .
+    command: >
+        bash -c "poetry run python manage.py runserver 0.0.0.0:8003"
+    ports:
+      - 127.0.0.1:12500:8003
+    volumes:
+      - ./craftstore:/app/craftstore
+    restart: always
+
+#  db:
+# 
+#    image: postgres:15-alpine
+#    restart: always
+#    environment:
+#      - POSTGRES_DB=craftstore
+#      - POSTGRES_USER=craftstoreadmin
+#      - POSTGRES_PASSWORD=craftstoreadminnet
+#    ports:
+#      - '5435:5435'
+#    volumes:
+#      - ./db_data:/var/lib/postgresql/data
