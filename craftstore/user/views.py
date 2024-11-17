@@ -141,10 +141,10 @@ class UserResetPassword(APIView):
         Вітаємо,  <b>{user.username}</b>! скидай парполь сука!
             
             <div class="code_wrapper" style="margin: 35px 0;">
-                <p>Для скидання паролю, Вам потрібно перейти за посиланням нижче</p>
+                <p>Для скидання паролю, скопіювати код нижче</p>
 
                 <div class="verification_code-wrapper" style="display: flex;">
-                    <a href="https://google.com/{password.id}">Скинути {password.id}</a>
+                    <h1 style="letter-spacing: 20px;">{password.code}</h1>
                 </div>
                 <p>Якщо Ви не реєструвались на сайті, можете проігнорувати це повідомлення.</p>
             </div>
@@ -162,16 +162,21 @@ class UserResetPassword(APIView):
             status = new_mail.send_email()
             return Response({"status": status,})
         if request.GET.get("step") == "2":
-            password_id = request.data.get("id")
-            password = models.Passwords.objects.filter(id=password_id)
+            email = request.data.get("email")
+            email_status = validator.validate_email(email=email)
+            if not email_status or not models.User.objects.filter(email=email).exists():
+                return Response({"status": False, "message": "Bad email"})
+            user = models.User.objects.get(email=email)
+            code = request.data.get("code")
+            password = models.Passwords.objects.filter(user=user, code=code)
             if not password.exists():
                 return Response({"status": False, "code": 404})
-            return Response({"status": True})
+            return Response({"status": True, "id": password.pk})
         if request.GET.get("step") == "3":
             password_id = request.data.get("id")
             new_password = request.data.get("new_password")
             new_repeat_password = request.data.get("repeat_password")
-            password = models.Passwords.objects.filter(id=password_id)
+            password = models.Passwords.objects.filter(pk=password_id)
             if not password.exists():
                 return Response({"status": False, "code": 404})
             password = password.first()

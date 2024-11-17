@@ -53,11 +53,11 @@ class ValidatedEmails(models.Model):
 
 
 class Passwords(models.Model):
-    id = models.CharField(max_length=60, primary_key=True)
-    user = models.ForeignKey(User,on_delete=models.CASCADE,)
+    code = models.IntegerField(max_length=6)
+    user = models.ForeignKey(User, on_delete=models.CASCADE,)
     date_pub = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
 
     def save(self, *args, **kwargs):
-        self.id = generate_random_string()
+        self.code = generate_number_string(num_digits=6)
         super().save(*args, **kwargs)
