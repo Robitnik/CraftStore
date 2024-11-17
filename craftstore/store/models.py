@@ -5,7 +5,7 @@ from django.utils.text import slugify
 class Store(models.Model):
     name = models.CharField(max_length=100, blank=True)
     slug = models.SlugField(unique=True, max_length=100, blank=True, null=True)
-    avatar = models.URLField(blank=True)
+    avatar = models.ForeignKey("cdn.Image", on_delete=models.SET_NULL, related_name="image", blank=True, null=True)
     social_links = models.ManyToManyField("UserSocialMedia", related_name="store", blank=True)
     describe = models.TextField(blank=True)
 
@@ -43,7 +43,7 @@ class Goods(models.Model):
     slug = models.CharField(max_length=100, blank=True, null=True)
     title = models.CharField(max_length=200, blank=True,)
     price = models.DecimalField(max_digits=10, blank=True, decimal_places=2)
-    poster = models.CharField(blank=True, max_length=500)
+    poster = models.ForeignKey("cdn.Image", on_delete=models.SET_NULL, related_name="image", blank=True, null=True)
     gallery = models.ManyToManyField("Gallery", related_name="goods", blank=True)
     description = models.TextField(blank=True)
     views_count = models.IntegerField(default=0)
@@ -98,7 +98,7 @@ class Goods(models.Model):
 
 
 class Gallery(models.Model):
-    path = models.CharField(max_length=1000, blank=True)
+    path = models.ForeignKey("cdn.Image", on_delete=models.SET_NULL, related_name="image", blank=True, null=True)
     date = models.DateTimeField(auto_now_add=True, blank=True)
 
 

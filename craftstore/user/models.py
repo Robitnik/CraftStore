@@ -6,7 +6,7 @@ from modules.generators.strings import generate_number_string, generate_random_s
 
 
 class User(AbstractUser):
-    avatar = models.CharField(max_length=1000, blank=True)
+    avatar = models.ForeignKey("cdn.Image", on_delete=models.SET_NULL, related_name="image", blank=True, null=True)
     groups = models.ManyToManyField('user.Group', related_name='users', blank=True)
     address = models.CharField(max_length=1000, blank=True)
     phone_number = models.CharField(max_length=1000, blank=True)

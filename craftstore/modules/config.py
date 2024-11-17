@@ -1,0 +1,1 @@
+cdn_domain = "https://cdn.craftdev.store/"
