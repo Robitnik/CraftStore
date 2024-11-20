@@ -52,7 +52,7 @@ class ValidatedEmails(models.Model):
         return super().save(*args, **kwargs)
 
 
-class Passwords(models.Model):
+class MailCode(models.Model):
     code = models.IntegerField(max_length=6)
     user = models.ForeignKey(User, on_delete=models.CASCADE,)
     date_pub = models.DateTimeField(auto_now_add=True)

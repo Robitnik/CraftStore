@@ -8,6 +8,7 @@ class Store(models.Model):
     avatar = models.ForeignKey("cdn.Image", on_delete=models.SET_NULL, related_name="image", blank=True, null=True)
     social_links = models.ManyToManyField("UserSocialMedia", related_name="store", blank=True)
     describe = models.TextField(blank=True)
+    owner = models.ForeignKey("user.User", related_name="store", on_delete=models.CASCADE, blank=True)
 
     def __str__(self) -> str:
         return f"{self.name}"
@@ -48,7 +49,7 @@ class Goods(models.Model):
     description = models.TextField(blank=True)
     views_count = models.IntegerField(default=0)
     bought_count = models.IntegerField(default=0)
-    characteristic = models.ManyToManyField("Characteristic", related_name="goods", blank=True)
+    characteristic = models.ManyToManyField("Characteristic", related_name="goods", on_delete=models.CASCADE, blank=True)
     category = models.ManyToManyField("Category", related_name="goods", blank=True,)
     published = models.BooleanField(default=True)
     count = models.IntegerField(default=0, blank=True, null=True)

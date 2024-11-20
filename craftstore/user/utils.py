@@ -1,3 +1,4 @@
+from django.http import HttpRequest
 from django.contrib.sessions.models import Session
 from .models import User
 
@@ -19,7 +20,7 @@ def get_user(session_key=None, username=None):
     return user, its_me
 
 
-def get_user_by_request(request):
+def get_user_by_request(request: HttpRequest) -> User:
     if request.user and request.user.is_authenticated:
         return request.user
     session_key = request.GET.get('token', str(request.headers.get("authorization")))

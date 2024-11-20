@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from modules.mail import mail
 from modules.validators import validator
 from modules.serializers import get_serializer_for_model
-
+from modules.html import render
 
 class UserLogin(APIView):
     @csrf_exempt
@@ -33,32 +33,14 @@ class UserRegister(APIView):
             
             if is_email and is_username:
                 return Response({"status": False, "is_email": is_email, "is_username": is_username})
-
             validated_email = models.ValidatedEmails(email=email)
             validated_email.save()
-
-            html_content = f"""
-        Вітаємо,  <b>{username}</b>! Дякуємо, за реєстрацію на нашому сайті!
-            
-            <div class="code_wrapper" style="margin: 35px 0;">
-                <p>Для завершення реєстрації, Вам потрібно ввести код наведений нижче</p>
-
-                <div class="verification_code-wrapper" style="display: flex;">
-                    <h3 class="verification_code" style="font-size: 20px; letter-spacing: 15px;">{validated_email.code}</h3>
-                </div>
-                <p>Якщо Ви не реєструвались на сайті, можете проігнорувати це повідомлення.</p>
-            </div>
-
-            <div>Дякуюємо, що вибрали <b>CraftStore</b>!</div>
-            Команда, CraftStore.
-            """
-
+            html_content = render.render_html(template="mail/validated_email.html", context={"username":username, "validated_email_code":validated_email.code})
             new_mail = mail.Email(
                 subject="Підтвердження реєстрації на сайті CraftStore", 
                 html_content=html_content,
                 recipient_email=email
             )
-
             status = new_mail.send_email()
             return Response({"status": status, "id": validated_email.pk})
         elif request.GET.get("step") == "2":
@@ -135,24 +117,9 @@ class UserResetPassword(APIView):
             if not email_status or not models.User.objects.filter(email=email).exists():
                 return Response({"status": False, "message": "Bad email"})
             user = models.User.objects.get(email=email)
-            password = models.Passwords(user=user)
+            password = models.MailCode(user=user)
             password.save()
-            html_content = f"""
-        Вітаємо,  <b>{user.username}</b>! скидай парполь сука!
-            
-            <div class="code_wrapper" style="margin: 35px 0;">
-                <p>Для скидання паролю, скопіювати код нижче</p>
-
-                <div class="verification_code-wrapper" style="display: flex;">
-                    <h1 style="letter-spacing: 20px;">{password.code}</h1>
-                </div>
-                <p>Якщо Ви не реєструвались на сайті, можете проігнорувати це повідомлення.</p>
-            </div>
-
-            <div>Дякуюємо, що вибрали <b>CraftStore</b>!</div>
-            Команда, CraftStore.
-            """
-
+            html_content = render.render_html("mail/reset_password.html", context={"user": user, "password": password})
             new_mail = mail.Email(
                 subject="Скидання паролю на сайті CraftStore", 
                 html_content=html_content,
@@ -168,7 +135,7 @@ class UserResetPassword(APIView):
                 return Response({"status": False, "message": "Bad email"})
             user = models.User.objects.get(email=email)
             code = request.data.get("code")
-            password = models.Passwords.objects.filter(user=user, code=code)
+            password = models.MailCode.objects.filter(user=user, code=code)
             if not password.exists():
                 return Response({"status": False, "code": 404})
             return Response({"status": True, "id": password.pk})
@@ -176,7 +143,7 @@ class UserResetPassword(APIView):
             password_id = request.data.get("id")
             new_password = request.data.get("new_password")
             new_repeat_password = request.data.get("repeat_password")
-            password = models.Passwords.objects.filter(pk=password_id)
+            password = models.MailCode.objects.filter(pk=password_id)
             if not password.exists():
                 return Response({"status": False, "code": 404})
             password = password.first()

@@ -48,13 +48,10 @@ class Image(models.Model):
         from modules.cloud.b2 import upload_file
         import os
         if not self.slug:
-            slug_exists = True
-            while slug_exists:
+            slug = generate_random_string(len1=8, len2=16)
+            while Image.objects.filter(slug=slug).exists():
                 slug = generate_random_string(len1=8, len2=16)
-                if not Image.objects.filter(slug=slug).exists():
-                    self.slug = slug
-                    slug_exists = False
-        super().save(*args, **kwargs)
+            self.slug = slug
         if not self.cloud:
             self.cloud = Cloud.objects.first()
         if self.url:
