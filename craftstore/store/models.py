@@ -99,7 +99,7 @@ class Goods(models.Model):
 
 
 class Gallery(models.Model):
-    path = models.ForeignKey("cdn.Image", on_delete=models.SET_NULL, related_name="image", blank=True, null=True)
+    img = models.ForeignKey("cdn.Image", on_delete=models.SET_NULL, related_name="image", blank=True, null=True)
     date = models.DateTimeField(auto_now_add=True, blank=True)
 
 

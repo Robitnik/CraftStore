@@ -1,8 +1,9 @@
-from typing import Iterable
 from django.db import models
 from django.contrib.auth.models import AbstractUser, Group as AbstracGroup
 from modules.enycryptor import FernetEncryptor
 from modules.generators.strings import generate_number_string, generate_random_string
+from django.utils.text import slugify
+
 
 
 class User(AbstractUser):
@@ -14,7 +15,7 @@ class User(AbstractUser):
     favorites = models.ManyToManyField("UserGoods", related_name="user_favorites", blank=True)
     views_history = models.ManyToManyField("UserGoods", related_name="user_views_history", blank=True)
     cart = models.ManyToManyField("UserGoods", related_name="user_cart", blank=True)
-
+    slug = models.SlugField(unique=True, max_length=100, blank=True, null=True)
 
     def is_online(self):
         return True
@@ -27,8 +28,10 @@ class User(AbstractUser):
     def __str__(self) -> str:
         return super().__str__()
 
-    def save(self, *args, **kwargs) -> None:
-        return super().save(*args, **kwargs)
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
 
 
 class Group(AbstracGroup):
