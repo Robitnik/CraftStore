@@ -24,3 +24,28 @@ def get_serializer_for_model(queryset, model, fields=None, many=True):
         {'Meta': Meta}
     )
     return DynamicSerializer(queryset, many=many)
+
+
+
+class UniversalCreateSerializer(serializers.ModelSerializer):
+    def __init__(self, *args, **kwargs):
+        model = kwargs.pop('model', None)
+        fields = kwargs.pop('fields', None)
+        if not model or not fields:
+            raise ValueError("Параметри 'model' та 'fields' є обов'язковими.")
+        super().__init__(*args, **kwargs)
+    class Meta:
+        model = None
+        fields = '__all__'
+
+
+def create_object(data, model, fields):
+    serializer = UniversalCreateSerializer(
+        data=data,
+        model=model,
+        fields=fields
+    )
+    if serializer.is_valid():
+        return serializer.save()
+    else:
+        return serializer.errors

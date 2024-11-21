@@ -60,3 +60,32 @@ class StoreViewSet(APIView):
         )
         data = serializer.data
         return Response(data, status=status.HTTP_200_OK)
+
+
+class StoreGoodSet(APIView):
+    def get(self, request: HttpRequest, *args, **kwargs):
+        # товари магазину
+        return Response({})
+    def post(self, request: HttpRequest, *args, **kwargs):
+        user = get_user_by_request(request=request)
+        store = user.store
+        good = dbutils.StoreGood(store=store, user=user)
+        if "hide" in request.GET:
+            data = good.hide_good(request=request)
+        if "unhide" in request.GET:
+            data = good.unhide_good(request=request)
+        if "create" in request.GET:
+            data =good.add_good(request=request)
+        else:
+            data = {"status": False, "code": 404}
+        return Response(data)
+    def put(self, request: HttpRequest, *args, **kwargs):
+        user = get_user_by_request(request=request)
+        store = user.store
+        good = dbutils.StoreGood(store=store, user=user)
+        return Response(good.update_good(request=request))
+    def delete(self, request: HttpRequest, *args, **kwargs):
+        user = get_user_by_request(request=request)
+        store = user.store
+        good = dbutils.StoreGood(store=store, user=user)
+        return Response(good.delete_good(request=request))

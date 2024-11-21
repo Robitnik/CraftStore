@@ -53,6 +53,7 @@ class Goods(models.Model):
     category = models.ManyToManyField("Category", related_name="goods", blank=True,)
     published = models.BooleanField(default=True)
     count = models.IntegerField(default=0, blank=True, null=True)
+    author = models.ForeignKey("user.User", related_name="goods", on_delete=models.SET_NULL)
     date_published = models.DateTimeField(auto_now_add=True, blank=True)
     date_updated = models.DateTimeField(auto_now=True, blank=True)
     def save(self, *args, **kwargs):
@@ -75,9 +76,9 @@ class Goods(models.Model):
             'views_count': self.views_count,
             'bought_count': self.bought_count,
             'store':  self.store.as_mini_dict(),
-            #'characteristic': [ch.as_dict() for ch in self.characteristic.all()],
-            #'category': [ch.as_dict() for ch in self.category.all()],
-            #'gallery': [ch.as_dict() for ch in self.gallery.all()],
+            'characteristic': [ch.as_dict() for ch in self.characteristic.all()],
+            'category': [ch.as_dict() for ch in self.category.all()],
+            'gallery': [ch.as_dict() for ch in self.gallery.all()],
             'date_published': self.date_published,
             'date_updated': self.date_updated,
         }
@@ -101,16 +102,22 @@ class Goods(models.Model):
 class Gallery(models.Model):
     img = models.ForeignKey("cdn.Image", on_delete=models.SET_NULL, related_name="image", blank=True, null=True)
     date = models.DateTimeField(auto_now_add=True, blank=True)
+    def as_dict(self) -> dict:
+        return {"img": self.img.url, "date": self.date}
 
 
 
 class Characteristic(models.Model):
     name_type = models.ForeignKey("CharacteristicNameType", on_delete=models.CASCADE, related_name="characteristic")
     value = models.CharField(max_length=1000, blank=True)
+    def as_dict(self) -> dict:
+        return {"type": self.name_type.name, "value": self.value}
 
 
 class CharacteristicNameType(models.Model):
     name = models.CharField(max_length=500, blank=True)
+    def as_dict(self) -> dict:
+        return {"name": self.name}
 
 
 class Category(models.Model):
@@ -125,6 +132,10 @@ class Category(models.Model):
         if not self.slug:
             self.slug = slugify(self.title)
         super().save(*args, **kwargs)
+
+
+    def as_dict(self) -> dict:
+        return {"name": self.name, "slug": self.slug, "id": self.pk, "description": self.description}
 
 
 class UserSocialMedia(models.Model):

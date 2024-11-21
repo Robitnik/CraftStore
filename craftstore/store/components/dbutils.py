@@ -1,11 +1,12 @@
 from user.models import User
-from store.models import Store
+from store.models import Store, Goods
 from django.utils.text import slugify
 from django.http import HttpRequest
 from modules.files import save_uploaded_file
 from cdn.utils import image_to_cloud
 from modules.mail import mail
 from modules.html import render
+from modules.serializers import create_object
 from user.models import MailCode
 
 
@@ -57,3 +58,62 @@ class UserStore:
                     good.delete()
                 store.delete()
                 return {"status": True}
+
+
+class StoreGood:
+    def __init__(self, store: Store, user: User):
+        self.store = store
+        self.user = user
+    def add_good(self, request: HttpRequest) -> dict:
+        if self.store.owner != self.user:
+            return {"status": False, "code": 400}
+        data = request.data
+        good: Goods = create_object(data=data, model=Goods, fields=["title", "price", "description"])
+        poster = image_to_cloud(save_uploaded_file(request.FILES.GET("store_logo")), url=f"images/store/{self.store.slug}/goods/{good.slug}/{good.slug}_image") if request.FILES.GET("store_logo") else None
+        #gallery = [image_to_cloud(save_uploaded_file(request.FILES.GET("store_logo")), url=f"images/store/{self.store.slug}/goods/{good.slug}/{good.slug}_image") for img in data.get("gallery", [])]
+        good.poster = poster
+        good.store = self.store
+        good.save()
+        return {"status": True, "good": good.as_dict()}
+    def delete_good(self, request: HttpRequest) -> dict:
+        if self.store.owner != self.user:
+            return {"status": False, "code": 400}
+        data = request.data
+        slug = data.get("slug")
+        if not slug:
+            return {"status": False,"code": 404, "massage":"good not found"}
+        if not Goods.objects.filter(slug=slug).exists():
+            return {"status": False,"code": 404, "massage":"good not found"}
+        good = Goods.objects.get(slug=slug, store=self.store)
+        good.delete()
+        return {"status": True, "good": good.as_dict()}
+    def hide_good(self, request: HttpRequest) -> dict:
+        data = request.data
+        slug = data.get("slug")
+        if not slug:
+            return {"status": False,"code": 404, "massage":"good not found"}
+        if not Goods.objects.filter(slug=slug).exists():
+            return {"status": False,"code": 404, "massage":"good not found"}
+        good = Goods.objects.get(slug=slug, store=self.store)
+        if good.author != self.user and self.store.owner != self.user:
+            return {"status": False, "code": 400}
+        good.published = False
+        good.save()
+        return {"status": True, "good": good.as_dict()}
+    def unhide_good(self, request: HttpRequest) -> dict:
+        data = request.data
+        slug = data.get("slug")
+        if not slug:
+            return {"status": False,"code": 404, "massage":"good not found"}
+        if not Goods.objects.filter(slug=slug).exists():
+            return {"status": False,"code": 404, "massage":"good not found"}
+        good = Goods.objects.get(slug=slug, store=self.store)
+        if good.author != self.user and self.store.owner != self.user:
+            return {"status": False, "code": 400}
+        good.published = True
+        good.save()
+        return {"status": True, "good": good.as_dict()}
+    def update_good(self, request: HttpRequest) -> dict:
+        data = request.data
+        slug = data.get("slug")
+        return {"status": False}
