@@ -5,7 +5,7 @@ from django.utils.text import slugify
 class Store(models.Model):
     name = models.CharField(max_length=100, blank=True)
     slug = models.SlugField(unique=True, max_length=100, blank=True, null=True)
-    avatar = models.ForeignKey("cdn.Image", on_delete=models.SET_NULL, related_name="image", blank=True, null=True)
+    avatar = models.ForeignKey("cdn.Image", on_delete=models.SET_NULL, related_name="store_image", blank=True, null=True)
     social_links = models.ManyToManyField("UserSocialMedia", related_name="store", blank=True)
     describe = models.TextField(blank=True)
     owner = models.ForeignKey("user.User", related_name="store", on_delete=models.CASCADE, blank=True)
@@ -44,16 +44,16 @@ class Goods(models.Model):
     slug = models.CharField(max_length=100, blank=True, null=True)
     title = models.CharField(max_length=200, blank=True,)
     price = models.DecimalField(max_digits=10, blank=True, decimal_places=2)
-    poster = models.ForeignKey("cdn.Image", on_delete=models.SET_NULL, related_name="image", blank=True, null=True)
+    poster = models.ForeignKey("cdn.Image", on_delete=models.SET_NULL, related_name="goods_image", blank=True, null=True)
     gallery = models.ManyToManyField("Gallery", related_name="goods", blank=True)
     description = models.TextField(blank=True)
     views_count = models.IntegerField(default=0)
     bought_count = models.IntegerField(default=0)
-    characteristic = models.ManyToManyField("Characteristic", related_name="goods", on_delete=models.CASCADE, blank=True)
+    characteristic = models.ManyToManyField("Characteristic", related_name="goods", blank=True)
     category = models.ManyToManyField("Category", related_name="goods", blank=True,)
     published = models.BooleanField(default=True)
     count = models.IntegerField(default=0, blank=True, null=True)
-    author = models.ForeignKey("user.User", related_name="goods", on_delete=models.SET_NULL)
+    author = models.ForeignKey("user.User", related_name="goods", on_delete=models.SET_NULL, null=True, blank=True)
     date_published = models.DateTimeField(auto_now_add=True, blank=True)
     date_updated = models.DateTimeField(auto_now=True, blank=True)
     def save(self, *args, **kwargs):
@@ -100,7 +100,7 @@ class Goods(models.Model):
 
 
 class Gallery(models.Model):
-    img = models.ForeignKey("cdn.Image", on_delete=models.SET_NULL, related_name="image", blank=True, null=True)
+    img = models.ForeignKey("cdn.Image", on_delete=models.SET_NULL, related_name="goods_gallery_image", blank=True, null=True)
     date = models.DateTimeField(auto_now_add=True, blank=True)
     def as_dict(self) -> dict:
         return {"img": self.img.url, "date": self.date}

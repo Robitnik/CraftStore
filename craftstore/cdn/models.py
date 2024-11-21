@@ -30,6 +30,8 @@ class Image(models.Model):
     url = models.CharField(max_length=1000, blank=True)
     create_at = models.DateTimeField(auto_now_add=True)
     slug = models.SlugField(blank=True, unique=True)
+    author = models.ForeignKey("user.USER", related_name="images", on_delete=models.CASCADE, null=True)
+
 
     class Meta:
         verbose_name = "Картинку"
@@ -42,6 +44,8 @@ class Image(models.Model):
         return f"{cdn_domain}/{self.url}"
     def get_absolute_url(self):
         return reverse("_detail", kwargs={"pk": self.pk})
+    def as_dict(self) -> dict:
+        return {"id": self.pk, "url": self.build_img_url(), "author": self.author.as_dict()}
 
 
     def save(self, *args, **kwargs):
@@ -72,3 +76,6 @@ class Image(models.Model):
         except Exception:
             pass
         return super().save(*args, **kwargs)
+    def delete(self, *args, **kwargs):
+        # Видаляти картинки
+        return super().delete(*args, **kwargs)

@@ -56,7 +56,7 @@ class ValidatedEmails(models.Model):
 
 
 class MailCode(models.Model):
-    code = models.IntegerField(max_length=6)
+    code = models.IntegerField(blank=True, null=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE,)
     date_pub = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)

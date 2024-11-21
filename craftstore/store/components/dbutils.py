@@ -86,7 +86,7 @@ class StoreGood:
             return {"status": False,"code": 404, "massage":"good not found"}
         good = Goods.objects.get(slug=slug, store=self.store)
         good.delete()
-        return {"status": True, "good": good.as_dict()}
+        return {"status": True}
     def hide_good(self, request: HttpRequest) -> dict:
         data = request.data
         slug = data.get("slug")
@@ -117,3 +117,5 @@ class StoreGood:
         data = request.data
         slug = data.get("slug")
         return {"status": False}
+
+
