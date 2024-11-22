@@ -16,16 +16,21 @@ class GoodsViewSet(APIView):
     def get(self, request, *args, **kwargs):
         model = models.Goods
         queryset = model.objects.all()
+
         fields = [
-            'store[id,name,slug]', 'slug', 'title', 'price', 
-            'poster', 'description', 'views_count', 'bought_count',
-            'published', 'count', 'date_published', 'date_updated',
-            'author'
+            'store[id,name,slug]', 
+            'slug', 'title', 'price', 
+            'poster', 'description', 
+            'views_count', 'bought_count',
+            'published', 'count', 
+            'date_published', 'date_updated',
+            'author[id,username]'
         ]
 
         serializer = serializers.get_serializer_for_model(queryset=queryset, model=model, fields=fields)
         data = serializer.data
         return Response(data, status=status.HTTP_200_OK)
+
 
 
 

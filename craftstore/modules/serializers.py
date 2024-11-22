@@ -12,22 +12,21 @@ class UniversalSerializer(serializers.ModelSerializer):
 
     def parse_fields(self, fields):
         """
-        Перетворює список полів у форматі ['field[subfield1,subfield2]', ...] 
-        у вкладену структуру словника.
+        Перетворює список полів у вкладену структуру словника для рекурсивної обробки.
         """
         parsed = {}
         for field in fields:
             if "[" in field and "]" in field:
                 main_field, nested_fields = field.split("[", 1)
                 nested_fields = nested_fields.rstrip("]").split(",")
-                parsed[main_field] = nested_fields
+                parsed[main_field] = self.parse_fields(nested_fields)
             else:
                 parsed[field] = None
         return parsed
 
     def filter_fields(self, parsed_fields):
         """
-        Фільтрує поля серіалізатора на основі вкладеної структури.
+        Рекурсивно фільтрує поля серіалізатора на основі вкладеної структури.
         """
         allowed = set(parsed_fields.keys())
         existing = set(self.fields.keys())
@@ -66,14 +65,18 @@ class UniversalSerializer(serializers.ModelSerializer):
 
     def get_related_serializer(self, model, fields, many=False):
         """
-        Створює серіалізатор для реляційних полів із вкладеними підполями.
-        Якщо поля не задані, використовує '__all__'.
+        Рекурсивно створює серіалізатор для реляційних полів із вкладеними підполями.
         """
+        if fields == '__all__':
+            fields = '__all__'
+        else:
+            fields = list(fields.keys())
+
         DynamicRelatedSerializer = type(
             f"{model.__name__}Serializer",
-            (serializers.ModelSerializer,),
+            (UniversalSerializer,),
             {
-                'Meta': type('Meta', (object,), {'model': model, 'fields': fields if fields != '__all__' else '__all__'})
+                'Meta': type('Meta', (object,), {'model': model, 'fields': fields})
             }
         )
         return DynamicRelatedSerializer(many=many)
