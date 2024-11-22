@@ -16,13 +16,11 @@ class GoodsViewSet(APIView):
     def get(self, request, *args, **kwargs):
         model = models.Goods
         queryset = model.objects.all()
-
-        # Вкладені поля у форматі field[subfield1,subfield2]
         fields = [
             'store[id,name,slug]', 'slug', 'title', 'price', 
             'poster', 'description', 'views_count', 'bought_count',
             'published', 'count', 'date_published', 'date_updated',
-            'author[id,username,favorites]'
+            'author'
         ]
 
         serializer = serializers.get_serializer_for_model(queryset=queryset, model=model, fields=fields)

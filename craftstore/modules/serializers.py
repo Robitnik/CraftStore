@@ -50,16 +50,30 @@ class UniversalSerializer(serializers.ModelSerializer):
                     self.fields[field_name] = self.get_related_serializer(
                         related_model, nested_fields, many=True
                     )
+            elif field_name in self.fields:
+                # Якщо підполя не задані, залишаємо всі поля реляційної моделі
+                field = self.fields[field_name]
+                if isinstance(field, serializers.PrimaryKeyRelatedField):
+                    related_model = field.queryset.model
+                    self.fields[field_name] = self.get_related_serializer(
+                        related_model, fields='__all__', many=False
+                    )
+                elif isinstance(field, serializers.ManyRelatedField):
+                    related_model = field.child_relation.queryset.model
+                    self.fields[field_name] = self.get_related_serializer(
+                        related_model, fields='__all__', many=True
+                    )
 
     def get_related_serializer(self, model, fields, many=False):
         """
         Створює серіалізатор для реляційних полів із вкладеними підполями.
+        Якщо поля не задані, використовує '__all__'.
         """
         DynamicRelatedSerializer = type(
             f"{model.__name__}Serializer",
             (serializers.ModelSerializer,),
             {
-                'Meta': type('Meta', (object,), {'model': model, 'fields': fields})
+                'Meta': type('Meta', (object,), {'model': model, 'fields': fields if fields != '__all__' else '__all__'})
             }
         )
         return DynamicRelatedSerializer(many=many)
