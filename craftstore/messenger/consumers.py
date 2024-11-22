@@ -32,7 +32,6 @@ class WSConsumer(AsyncWebsocketConsumer):
     async def chat_message(self, event):
         # Отримання повідомлення з групи
         message = event["message"]
-        print(message)
 
         # Відправка клієнту
         await self.send(text_data=json.dumps({

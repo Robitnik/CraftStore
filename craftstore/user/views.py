@@ -1,5 +1,6 @@
 from modules import serializers
 from . import utils as user_itils, models
+from django.http import HttpRequest
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import authenticate, login as auth_login_user
 from rest_framework.views import APIView
@@ -11,7 +12,7 @@ from modules.html import render
 
 class UserLogin(APIView):
     @csrf_exempt
-    def post(self, request):
+    def post(self, request: HttpRequest):
         username = request.data.get('username')
         password = request.data.get('password')
         user = authenticate(request, username=username, password=password)
@@ -24,7 +25,7 @@ class UserLogin(APIView):
 
 
 class UserRegister(APIView):
-    def post(self, request):
+    def post(self, request: HttpRequest):
         if request.GET.get("step") == "1":
             username = request.data.get('username')
             email = request.data.get('email')
@@ -92,7 +93,7 @@ class UserRegister(APIView):
 
 
 class UserEdit(APIView):
-    def post(self, request):
+    def post(self, request: HttpRequest):
         email_status, phone_status = False
         email = request.data.get("email")
         phone_number = request.data.get('phone_number')
@@ -110,7 +111,7 @@ class UserEdit(APIView):
 
 
 class UserResetPassword(APIView):
-    def post(self, request):
+    def post(self, request: HttpRequest):
         if request.GET.get("step") == "1":
             email = request.data.get("email")
             email_status = validator.validate_email(email=email)
@@ -160,10 +161,27 @@ class UserResetPassword(APIView):
 
 
 class User(APIView):
-    def get(self, request):
+    def get(self, request: HttpRequest):
         user = user_itils.get_user_by_request(request=request)
         serializer = get_serializer_for_model(queryset=user, 
                                               model=models.User,
                                               fields=["avatar", "username", "first_name", "last_name", "is_active", "last_login", "date_joined"], 
                                               many=False)
         return Response(serializer.data)
+
+
+class Favorites(APIView):
+    def get(self, request: HttpRequest):
+        user = user_itils.get_user_by_request(request)
+        if not user:
+            return Response({"status": False, "code": 400})
+        serializer = get_serializer_for_model(queryset=user, 
+                                              model=models.User,
+                                              fields=["avatar", "username", "first_name", "last_name", "is_active", "last_login", "date_joined"], 
+                                              many=False)
+        return Response(serializer.data)
+        
+    def post(self, request: HttpRequest):
+        pass
+    def delete(self, request: HttpRequest):
+        pass

@@ -30,7 +30,7 @@ class User(AbstractUser):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.name)
+            self.slug = slugify(self.get_full_name())
         super().save(*args, **kwargs)
 
 
@@ -40,7 +40,7 @@ class Group(AbstracGroup):
 
 
 class UserGoods(models.Model):
-    # goods = models.ManyToManyField
+    goods = models.ForeignKey("store.Goods", on_delete=models.CASCADE)
     date = models.DateTimeField(auto_now_add=True, blank=True)
 
 

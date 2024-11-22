@@ -4,8 +4,8 @@ from django.utils.text import slugify
 
 class Store(models.Model):
     name = models.CharField(max_length=100, blank=True)
-    slug = models.SlugField(unique=True, max_length=100, null=True)
-    avatar = models.ForeignKey("cdn.Image", on_delete=models.SET_NULL, related_name="store_image", null=True)
+    slug = models.SlugField(unique=True, max_length=100, blank=True)
+    avatar = models.ForeignKey("cdn.Image", on_delete=models.SET_NULL, related_name="store_image", blank=True, null=True)
     social_links = models.ManyToManyField("UserSocialMedia", related_name="store", blank=True)
     describe = models.TextField(blank=True)
     owner = models.ForeignKey("user.User", related_name="store", on_delete=models.CASCADE, null=True)

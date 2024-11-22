@@ -14,17 +14,20 @@ def main(request:HttpRequest):
 
 
 class GoodsViewSet(APIView):
-    def get(self, request: HttpRequest, *args, **kwargs):
+    def get(self, request, *args, **kwargs):
         model = models.Goods
-        queryset = object_filter(request=request, object=model.objects.all())
-        serializer = serializers.get_serializer_for_model(
-            queryset=queryset,
-            model=model,
-            fields=['store', 'slug', 'title', 'price', 'poster', 'description', 'views_count', 'bought_count', 'published', 'count', 'date_published', 'date_updated']
-        )
+        queryset = model.objects.all()
+        fields = {
+            'store': 'id,name,slug',
+            'poster': 'url',
+            'category': 'id,name',
+            'author': 'id, username'
+        }
+        
+        # Створюємо серіалізатор на основі переданої моделі та полів
+        serializer = serializers.get_serializer_for_model(queryset=queryset, model=model, fields=['store', 'slug', 'title', 'price', 'poster', 'description', 'views_count', 'bought_count', 'published', 'count', 'date_published', 'date_updated', 'author'], context={'fields': fields})
         data = serializer.data
         return Response(data, status=status.HTTP_200_OK)
-
 
 
 class UserStore(APIView):
