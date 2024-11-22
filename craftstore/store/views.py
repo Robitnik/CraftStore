@@ -12,22 +12,23 @@ from .components import dbutils
 def main(request:HttpRequest):
     return  HttpResponse("Craftstore")
 
-
 class GoodsViewSet(APIView):
     def get(self, request, *args, **kwargs):
         model = models.Goods
         queryset = model.objects.all()
-        fields = {
-            'store': 'id,name,slug',
-            'poster': 'url',
-            'category': 'id,name',
-            'author': 'id, username'
-        }
-        
-        # Створюємо серіалізатор на основі переданої моделі та полів
-        serializer = serializers.get_serializer_for_model(queryset=queryset, model=model, fields=['store', 'slug', 'title', 'price', 'poster', 'description', 'views_count', 'bought_count', 'published', 'count', 'date_published', 'date_updated', 'author'], context={'fields': fields})
+
+        # Вкладені поля у форматі field[subfield1,subfield2]
+        fields = [
+            'store[id,name,slug]', 'slug', 'title', 'price', 
+            'poster', 'description', 'views_count', 'bought_count',
+            'published', 'count', 'date_published', 'date_updated',
+            'author[id,username,favorites]'
+        ]
+
+        serializer = serializers.get_serializer_for_model(queryset=queryset, model=model, fields=fields)
         data = serializer.data
         return Response(data, status=status.HTTP_200_OK)
+
 
 
 class UserStore(APIView):
