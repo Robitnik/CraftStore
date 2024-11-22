@@ -23,7 +23,7 @@ INSTALLED_APPS = [
     'cdn',
     'user',
     'store',
-    'main',
+    'sandbox',
 ]
 
 MIDDLEWARE = [
