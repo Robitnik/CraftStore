@@ -7,4 +7,5 @@ urlpatterns = [
     path('', include('user.urls')),
     path('', include('cdn.urls')),
     path('', include('sandbox.urls')),
+    path('', include('messenger.urls')),
 ]

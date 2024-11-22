@@ -17,13 +17,16 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'daphne',
     'django.contrib.staticfiles',
     'rest_framework',
+    'channels',
     'corsheaders',
     'cdn',
     'user',
     'store',
     'sandbox',
+    'messenger',
 ]
 
 MIDDLEWARE = [
@@ -56,6 +59,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'craftstore.wsgi.application'
+ASGI_APPLICATION = 'craftstore.asgi.application'
 
 DATABASES = {
     'default': {
