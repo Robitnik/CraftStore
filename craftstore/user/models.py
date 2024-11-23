@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractUser, Group as AbstracGroup
 from modules.enycryptor import FernetEncryptor
 from modules.generators.strings import generate_number_string, generate_random_string
 from django.utils.text import slugify
+from django.contrib.auth.hashers import is_password_usable
 
 
 
@@ -29,12 +30,15 @@ class User(AbstractUser):
         return super().__str__()
 
     def save(self, *args, **kwargs):
-        if self.password and not self.is_password_usable(self.password):
+        if self.password and not is_password_usable(self.password):
             self.set_password(self.password)
         if not self.slug:
             self.slug = slugify(self.username, allow_unicode=False)
         super().save(*args, **kwargs)
-
+    def get_avatar_url(self):
+        return self.avatar.build_img_url() if self.avatar else None
+    def as_dict(self) -> dict:
+        return {"username": self.username, "id":  self.pk, "slug": self.slug, "avatar": self.get_avatar_url()}
 
 class Group(AbstracGroup):
     def __str__(self) -> str:
