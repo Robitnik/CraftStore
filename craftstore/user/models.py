@@ -15,7 +15,7 @@ class User(AbstractUser):
     favorites = models.ManyToManyField("UserGoods", related_name="user_favorites", blank=True)
     views_history = models.ManyToManyField("UserGoods", related_name="user_views_history", blank=True)
     cart = models.ManyToManyField("UserGoods", related_name="user_cart", blank=True)
-    slug = models.SlugField(unique=True, max_length=100, blank=True, null=True)
+    slug = models.SlugField(blank=True)
 
     def is_online(self):
         return True
@@ -29,8 +29,10 @@ class User(AbstractUser):
         return super().__str__()
 
     def save(self, *args, **kwargs):
+        if self.password and not self.is_password_usable(self.password):
+            self.set_password(self.password)
         if not self.slug:
-            self.slug = slugify(self.get_full_name())
+            self.slug = slugify(self.username, allow_unicode=False)
         super().save(*args, **kwargs)
 
 

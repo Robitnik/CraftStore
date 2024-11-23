@@ -1,11 +1,28 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.utils.translation import gettext_lazy as _
 from .models import User, Group, UserGoods, ValidatedEmails, MailCode
 
-class UserAdmin(admin.ModelAdmin):
-    list_display = ('id', 'username', 'email', 'phone_number', 'user_gender', 'address', 'slug')
-    search_fields = ('username', 'email', 'phone_number', 'address')
-    list_filter = ('user_gender',)
+
+@admin.register(User)
+class UserAdmin(BaseUserAdmin):
+    list_display = ('username', 'email', 'first_name', 'last_name', 'is_staff')
+    search_fields = ('username', 'email', 'first_name', 'last_name')
     ordering = ('username',)
+
+    fieldsets = (
+        (None, {'fields': ('username', 'password')}),
+        (_('Personal info'), {'fields': ('first_name', 'last_name', 'email', 'avatar', 'address', 'phone_number', 'user_gender')}),
+        (_('Permissions'), {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
+        (_('Important dates'), {'fields': ('last_login', 'date_joined')}),
+        (_('Additional info'), {'fields': ('favorites', 'views_history', 'cart', 'slug')}),
+    )
+    add_fieldsets = (
+        (None, {
+            'classes': ('wide',),
+            'fields': ('username', 'password1', 'password2', 'email', 'first_name', 'last_name'),
+        }),
+    )
 
 
 class GroupAdmin(admin.ModelAdmin):
@@ -32,7 +49,6 @@ class MailCodeAdmin(admin.ModelAdmin):
     ordering = ('-date_pub',)
 
 
-admin.site.register(User, UserAdmin)
 admin.site.register(Group, GroupAdmin)
 admin.site.register(UserGoods, UserGoodsAdmin)
 admin.site.register(ValidatedEmails, ValidatedEmailsAdmin)
