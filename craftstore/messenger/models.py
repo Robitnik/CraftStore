@@ -1,5 +1,6 @@
 from django.db import models
 from modules.generators.strings import generate_random_string
+from django.db.models import Max
 
 
 class Chat(models.Model):
@@ -7,9 +8,14 @@ class Chat(models.Model):
     masseges = models.ManyToManyField("Massage", related_name="chat", blank=True)
     slug = models.SlugField(default=generate_random_string(50, 100), unique=True, max_length=200)
     date = models.DateTimeField(auto_now=True)
-    
+
+
+    def get_last_message_date(self):
+        return self.masseges.aggregate(last_date=Max('send_date'))['last_date']
+    def get_last_message(self):
+        return self.masseges.last().as_dict() if self.masseges.exists() else None
     def as_dict(self) -> dict:
-        return {"slug": self.slug, "id": self.pk, "members": {"count": self.members.count()}}    
+        return {"slug": self.slug, "id": self.pk, "members": {"count": self.members.count()}, "date": self.date, "last_message": self.get_last_message(), "unread_message_count": self.masseges.filter(read=False).count()}
     def save(self, *args, **kwargs):
         return super().save(*args, **kwargs)
 

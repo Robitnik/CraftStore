@@ -4,6 +4,7 @@ from modules import serializers, filters, datetimeutils
 from user.utils import get_user_by_request
 from . import models
 from django.utils.dateparse import parse_datetime
+from django.db.models import Max
 
 
 class UserChatSet(APIView):
@@ -11,14 +12,18 @@ class UserChatSet(APIView):
         user = get_user_by_request(request=request)
         if not user:
             return Response({"status": False, "code": 400})
-        model = models.Chat
-        queryset = filters.object_filter(request=request, object=model.objects.all())
-        serializer = serializers.get_serializer_for_model(
-            queryset=queryset,
-            model=model,
-            fields=["slug", "date"]
-        )
-        data = serializer.data
+        chats = models.Chat.objects.filter(members=user)
+        chats = chats.annotate(last_message_date=Max('masseges__send_date')).order_by('-last_message_date')
+        chats = filters.object_filter(request=request, object=chats)
+        data = {"count": chats.count(), "chats": []}
+        for chat in chats:
+            chat_dict = chat.as_dict()
+            chat_dict["opponent"] = None
+            for member in chat.members.all():
+                if user != member:
+                    chat_dict["opponent"] = member.as_dict()            
+            data["chats"].append(chat_dict)
+        
         return Response(data)
 
 
