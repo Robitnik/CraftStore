@@ -28,19 +28,60 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        const chatSocket = new WebSocket('ws://127.0.0.1:8000/api/ws/chat/{{chat_slug}}/{{user_token}}');
+        const chatSlug = "{{ chat_slug }}";  // Переконайтеся, що slug чату передається в шаблон
+        const userToken = "{{ user_token }}";  // Переконайтеся, що токен користувача передається в шаблон
+
+        const apiUrl = `//{{request.get_host}}/api/rest/messeger/chat/${chatSlug}`;  // URL для API
 
         // DOM Elements
         const messagesDiv = document.getElementById('messages');
         const messageForm = document.getElementById('messageForm');
         const messageInput = document.getElementById('messageInput');
 
+        // Функція для завантаження останніх повідомлень через API
+        async function loadMessages() {
+            try {
+                const response = await fetch(apiUrl);
+                const messages = await response.json();
+        
+                // Виведення всіх повідомлень
+                messages.forEach(message => {
+                    const messageElement = document.createElement('div');
+                    messageElement.classList.add('alert', 'alert-secondary', 'p-2');
+        
+                    const sender = message.sender.username; // Ім'я відправника
+                    const sendDate = new Date(message.date.send).toLocaleString();
+                    const editDate = message.date.edit ? new Date(message.date.edit).toLocaleString() : null;
+        
+                    let messageContent = `<strong>${sender}</strong> (${sendDate})<br>${message.massege}`;
+        
+                    if (editDate) {
+                        messageContent += `<br><small>Edited: ${editDate}</small>`;
+                    }
+        
+                    messageElement.innerHTML = messageContent;
+                    messagesDiv.appendChild(messageElement);
+                });
+        
+                // Прокрутка вниз, щоб показати останні повідомлення
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        
+            } catch (error) {
+                console.error('Error loading messages:', error);
+            }
+        }
+        // Завантажуємо повідомлення при завантаженні сторінки
+        loadMessages();
+
+        // Підключення до WebSocket
+        const chatSocket = new WebSocket(`ws://127.0.0.1:8000/api/ws/chat/${chatSlug}/${userToken}`);
+
         // WebSocket Handlers
         chatSocket.onmessage = function(event) {
             const data = JSON.parse(event.data);
             const message = data.message;
 
-            // Створення елемента для відображення повідомлення
+            // Створення елемента для відображення нового повідомлення
             const messageElement = document.createElement('div');
             messageElement.classList.add('alert', 'alert-secondary', 'p-2');
 
@@ -49,7 +90,6 @@
             const sendDate = new Date(message.date.send).toLocaleString();
             const editDate = message.date.edit ? new Date(message.date.edit).toLocaleString() : null;
 
-            // Виведення відправника і часу
             let messageContent = `<strong>${sender}</strong> (${sendDate})<br>${message.massege}`;
 
             if (editDate) {

@@ -1,6 +1,7 @@
 from django.db import models
 from modules.generators.strings import generate_random_string
 
+
 class Chat(models.Model):
     members = models.ManyToManyField("user.User", related_name="chats", blank=True)
     masseges = models.ManyToManyField("Massage", related_name="chat", blank=True)
