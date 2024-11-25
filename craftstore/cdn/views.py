@@ -20,8 +20,8 @@ class ImageSet(APIView):
         uploaded_file = request.FILES.get("image")
         if not uploaded_file:
             return Response({"error": "Image file is required"}, status=400)
-        store_logo_path = image_to_cloud(save_uploaded_file(uploaded_file), url=url)
-        return Response({"id": 1, "path": store_logo_path, "url": path})
+        img = image_to_cloud(save_uploaded_file(uploaded_file), url=url)
+        return Response(img.as_dict())
     def delete(self, request: HttpRequest):
         user = get_user_by_request(request=request)
         if not user:
@@ -30,5 +30,7 @@ class ImageSet(APIView):
         if not models.Image.objects.filter(pk=img_id).exists():
             return Response({"status": False, "code": 404}, status=404)
         img_obj = models.Image.objects.get(pk=img_id)
+        if user != img_obj.author:
+            return Response({"status": False, "code": 404, "message": "This user dont have premission to this image."})
         status, message = img_obj.delete()
         return Response({"status": status, "message": message})
