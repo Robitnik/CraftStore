@@ -77,5 +77,9 @@ class Image(models.Model):
             pass
         return super().save(*args, **kwargs)
     def delete(self, *args, **kwargs):
-        # Видаляти картинки
-        return super().delete(*args, **kwargs)
+        from modules.cloud.b2 import delete_file
+        status, message = delete_file(file_path=self.url, cloud_id=self.cloud.pk)
+        if not status:
+            return status, message
+        super().delete(*args, **kwargs)
+        return True, True
