@@ -1,6 +1,7 @@
 from django.db import models
 from modules.generators.strings import generate_random_string
 from django.db.models import Max
+from modules.serializers import get_serializer_for_model
 
 
 class Chat(models.Model):
@@ -9,15 +10,27 @@ class Chat(models.Model):
     slug = models.SlugField(default=generate_random_string(50, 100), unique=True, max_length=200)
     date = models.DateTimeField(auto_now=True)
 
-
     def get_last_message_date(self):
         return self.masseges.aggregate(last_date=Max('send_date'))['last_date']
+
     def get_last_message(self):
         return self.masseges.last().as_dict() if self.masseges.exists() else None
-    def as_dict(self) -> dict:
-        return {"slug": self.slug, "id": self.pk, "members": {"count": self.members.count()}, "date": self.date, "last_message": self.get_last_message(), "unread_message_count": self.masseges.filter(read=False).count()}
+
+    def as_dict(self, fields=None):
+        fields = fields or ['slug', 'id', 'date']
+        data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
+        data['members'] = [member.as_mini_dict() for member in self.members.all()]
+        data['last_message'] = self.get_last_message()
+        data['unread_message_count'] = self.masseges.filter(read=False).count()
+        return data.data
+
+    def as_mini_dict(self, fields=None):
+        fields = fields or ['slug', 'id', 'date']
+        data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
+        return data.data
+
     def save(self, *args, **kwargs):
-        return super().save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
 
 class Massage(models.Model):
@@ -26,7 +39,18 @@ class Massage(models.Model):
     read = models.BooleanField(default=False)
     send_date = models.DateTimeField(auto_now_add=True)
     edit_date = models.DateTimeField(auto_now=True)
+
     def is_edit(self) -> bool:
         return self.edit_date if self.send_date != self.edit_date else False
-    def as_dict(self) -> dict:
-        return {"massege": self.massege, "sender": self.sender.as_dict(), "is_read": self.read, "date": {"send": str(self.send_date), "edit": str(self.edit_date)}}
+
+    def as_dict(self, fields=None):
+        fields = fields or ['massege', 'read', 'send_date', 'edit_date']
+        data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
+        data['sender'] = self.sender.as_mini_dict()
+        data['date'] = {"send": str(self.send_date), "edit": str(self.edit_date)}
+        return data.data
+
+    def as_mini_dict(self, fields=None):
+        fields = fields or ['massege', 'read', 'send_date']
+        data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
+        return data.data

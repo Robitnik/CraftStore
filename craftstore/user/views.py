@@ -178,7 +178,7 @@ class UserFavoritesAPI(APIView):
             return Response({"status": False, "code": 400})
         data = {"count": user.favorites.count(),"goods":[]}
         for goods in user.favorites.all():
-            data["goods"].append(goods.goods.as_mini_dict())
+            data["goods"].append(goods.goods.as_dict())
         return Response(data)
     def post(self, request: HttpRequest):
         user = user_itils.get_user_by_request(request)

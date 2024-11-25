@@ -3,6 +3,7 @@ from django.urls import reverse
 from modules.config import cdn_domain
 from modules.generators.strings import generate_random_string
 from modules.images.convertor import image_to_webp
+from modules.serializers import get_serializer_for_model
 
 
 class Cloud(models.Model):
@@ -32,7 +33,6 @@ class Image(models.Model):
     slug = models.SlugField(blank=True, unique=True)
     author = models.ForeignKey("user.USER", related_name="images", on_delete=models.CASCADE, null=True)
 
-
     class Meta:
         verbose_name = "Картинку"
         verbose_name_plural = "Картинки"
@@ -42,10 +42,22 @@ class Image(models.Model):
 
     def build_img_url(self):
         return f"{cdn_domain}/{self.url}"
+
     def get_absolute_url(self):
         return reverse("_detail", kwargs={"pk": self.pk})
-    def as_dict(self) -> dict:
-        return {"id": self.pk, "url": self.build_img_url(), "author": self.author.as_dict()}
+
+    def as_dict(self, fields=None):
+        fields = fields or ['id', 'url', 'create_at', 'slug']
+        data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
+        data['url'] = self.build_img_url()
+        data['author'] = self.author.as_mini_dict() if self.author else None
+        return data.data
+
+    def as_mini_dict(self, fields=None):
+        fields = fields or ['id', 'url', 'slug']
+        data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
+        data['url'] = self.build_img_url()
+        return data.data
 
 
     def save(self, *args, **kwargs):

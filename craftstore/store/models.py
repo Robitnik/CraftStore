@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils.text import slugify
+from modules.serializers import get_serializer_for_model
 
 
 class Store(models.Model):
@@ -14,22 +15,14 @@ class Store(models.Model):
         return f"{self.name}"
 
 
-    def as_dict(self):
-        data = {
-            'id': self.pk,
-            'slug': self.slug,
-            'name': self.name,
-            'avatar': self.avatar,
-            'describe': self.describe,
-        }
-        return data
-    def as_mini_dict(self):
-        data = {
-            'id': self.pk,
-            'slug': self.slug,
-            'name': self.name,
-        }
-        return data
+    def as_dict(self, fields=None):
+        fields = fields or ['id','slug','name','avatar','describe']
+        data = get_serializer_for_model(queryset=self, model=Store, fields=fields, many=False)
+        return data.data
+    def as_mini_dict(self, fields=None):
+        fields = fields or ['id','slug','name','avatar']
+        data = get_serializer_for_model(queryset=self, model=Store, fields=fields, many=False)
+        return data.data
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -65,59 +58,63 @@ class Goods(models.Model):
         return self.title
     
 
-    def as_dict(self):
-        data = {
-            'id': self.pk,
-            'slug': self.slug,
-            'title': self.title,
-            'price': self.price,
-            'poster': self.poster,
-            'description': self.description,
-            'views_count': self.views_count,
-            'bought_count': self.bought_count,
-            'store':  self.store.as_mini_dict(),
-            'characteristic': [ch.as_dict() for ch in self.characteristic.all()],
-            'category': [ch.as_dict() for ch in self.category.all()],
-            'gallery': [ch.as_dict() for ch in self.gallery.all()],
-            'date_published': self.date_published,
-            'date_updated': self.date_updated,
-        }
-        return data
-    def as_mini_dict(self):
-        data = {
-            'id': self.pk,
-            'slug': self.slug,
-            'title': self.title,
-            'price': self.price,
-            'poster': self.poster,
-            'views_count': self.views_count,
-            'store':  self.store.as_mini_dict(),
-            'date_published': self.date_published,
-            'date_updated': self.date_updated,
-        }
-        return data
+    def as_dict(self, fields=None):
+        fields = fields or ['id', 'slug', 'title', 'price', 'poster', 'description', 'views_count', 'bought_count', 'store', 'date_published', 'date_updated']
+        data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
+        data['characteristic'] = [ch.as_dict() for ch in self.characteristic.all()]
+        data['category'] = [cat.as_dict() for cat in self.category.all()]
+        data['gallery'] = [img.as_dict() for img in self.gallery.all()]
+        return data.data
+
+    def as_mini_dict(self, fields=None):
+        fields = fields or ['id', 'slug', 'title', 'price', 'poster', 'views_count', 'store', 'date_published', 'date_updated']
+        data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
+        return data.data
 
 
 
 class Gallery(models.Model):
     img = models.ForeignKey("cdn.Image", on_delete=models.SET_NULL, related_name="goods_gallery_image", blank=True, null=True)
     date = models.DateTimeField(auto_now_add=True, blank=True)
-    def as_dict(self) -> dict:
-        return {"img": self.img.url, "date": self.date}
 
+    def as_dict(self, fields=None):
+        fields = fields or ['img', 'date']
+        data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
+        return data.data
+
+    def as_mini_dict(self, fields=None):
+        fields = fields or ['img']
+        data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
+        return data.data
 
 
 class Characteristic(models.Model):
     name_type = models.ForeignKey("CharacteristicNameType", on_delete=models.CASCADE, related_name="characteristic")
     value = models.CharField(max_length=1000, blank=True)
-    def as_dict(self) -> dict:
-        return {"type": self.name_type.name, "value": self.value}
+
+    def as_dict(self, fields=None):
+        fields = fields or ['name_type', 'value']
+        data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
+        return data.data
+
+    def as_mini_dict(self, fields=None):
+        fields = fields or ['name_type']
+        data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
+        return data.data
 
 
 class CharacteristicNameType(models.Model):
     name = models.CharField(max_length=500, blank=True)
-    def as_dict(self) -> dict:
-        return {"name": self.name}
+
+    def as_dict(self, fields=None):
+        fields = fields or ['name']
+        data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
+        return data.data
+
+    def as_mini_dict(self, fields=None):
+        fields = fields or ['name']
+        data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
+        return data.data
 
 
 class Category(models.Model):
@@ -127,23 +124,47 @@ class Category(models.Model):
     date_published = models.DateTimeField(auto_now_add=True, blank=True)
     date_updated = models.DateTimeField(auto_now=True, blank=True)
 
-
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.title)
+            self.slug = slugify(self.name)
         super().save(*args, **kwargs)
 
+    def as_dict(self, fields=None):
+        fields = fields or ['name', 'slug', 'id', 'description', 'date_published', 'date_updated']
+        data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
+        return data.data
 
-    def as_dict(self) -> dict:
-        return {"name": self.name, "slug": self.slug, "id": self.pk, "description": self.description}
+    def as_mini_dict(self, fields=None):
+        fields = fields or ['name', 'slug', 'id']
+        data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
+        return data.data
 
 
 class UserSocialMedia(models.Model):
     social = models.ForeignKey("SocialMedia", related_name="user_social_media", on_delete=models.CASCADE, blank=True)
     link = models.CharField(max_length=200, blank=True)
 
+    def as_dict(self, fields=None):
+        fields = fields or ['social', 'link']
+        data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
+        return data.data
+
+    def as_mini_dict(self, fields=None):
+        fields = fields or ['social']
+        data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
+        return data.data
 
 
 class SocialMedia(models.Model):
     name = models.CharField(max_length=100, blank=True)
     icon = models.CharField(max_length=150, blank=True)
+
+    def as_dict(self, fields=None):
+        fields = fields or ['name', 'icon']
+        data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
+        return data.data
+
+    def as_mini_dict(self, fields=None):
+        fields = fields or ['name']
+        data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
+        return data.data
