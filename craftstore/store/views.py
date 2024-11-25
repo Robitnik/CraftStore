@@ -9,14 +9,14 @@ from user.utils import get_user_by_request
 from .components import dbutils
 
 
+
 def main(request:HttpRequest):
     return  HttpResponse("Craftstore")
 
-class GoodsViewSet(APIView):
+class GoodsViewFilter(APIView):
     def get(self, request, *args, **kwargs):
         model = models.Goods
-        queryset = model.objects.all()
-
+        queryset = object_filter(request=request, object=model.objects.all())
         fields = [
             'store[id,name,slug]', 
             'slug', 'title', 'price', 
@@ -26,7 +26,6 @@ class GoodsViewSet(APIView):
             'date_published', 'date_updated',
             'author[id,username]'
         ]
-
         serializer = serializers.get_serializer_for_model(queryset=queryset, model=model, fields=fields)
         data = serializer.data
         return Response(data, status=status.HTTP_200_OK)
@@ -96,3 +95,11 @@ class StoreGoodSet(APIView):
         store = user.store
         good = dbutils.StoreGood(store=store, user=user)
         return Response(good.delete_good(request=request))
+
+
+class GoodsViewSet(APIView):
+    def get(self, request: HttpRequest, store_slug, goods_slug):
+        if not  models.Goods.objects.filter(slug=goods_slug).exists():
+            return Response({"status": False, "code": 404}, status=404)
+        goods = models.Goods.objects.get(slug=goods_slug)
+        return Response(goods.as_dict())

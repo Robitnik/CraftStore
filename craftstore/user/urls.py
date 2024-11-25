@@ -8,4 +8,6 @@ urlpatterns = [
     path("api/rest/user/edit", views.UserEdit.as_view(), name="user_edit_url"),
     path("api/rest/user/reset/password", views.UserResetPassword.as_view(), name="user_reset_password_url"),
     path("api/rest/user", views.User.as_view(), name="user_url"),
+    path("api/rest/user/favorites", views.FavoritesAPI.as_view(), name="user_favorites_url"),
+
 ]

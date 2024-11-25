@@ -1,5 +1,6 @@
 from modules import serializers
 from . import utils as user_itils, models
+from store import models as store_models
 from django.http import HttpRequest
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import authenticate, login as auth_login_user
@@ -170,18 +171,37 @@ class User(APIView):
         return Response(serializer.data)
 
 
-class Favorites(APIView):
+class FavoritesAPI(APIView):
     def get(self, request: HttpRequest):
         user = user_itils.get_user_by_request(request)
         if not user:
             return Response({"status": False, "code": 400})
-        serializer = get_serializer_for_model(queryset=user, 
-                                              model=models.User,
-                                              fields=["avatar", "username", "first_name", "last_name", "is_active", "last_login", "date_joined"], 
-                                              many=False)
-        return Response(serializer.data)
-        
+        data = []
+        for goods in user.favorites.all():
+            data.append(goods.goods.as_mini_dict())
+        return Response(data)
     def post(self, request: HttpRequest):
-        pass
+        user = user_itils.get_user_by_request(request)
+        if not user:
+            return Response({"status": False, "code": 400})
+        good_slug = request.data.get("good_slug")
+        if not store_models.Goods.objects.filter(slug=good_slug).exists():
+            return Response({"status": False, "code": 404})
+        goods = store_models.Goods.objects.filter(slug=good_slug)
+        usergoods = models.UserGoods.objects.get_or_create(goods=goods, user_favorites=user)
+        user.favorites.add(usergoods)
+        user.save()
+        return Response({"status": True})
     def delete(self, request: HttpRequest):
-        pass
+        user = user_itils.get_user_by_request(request)
+        if not user:
+            return Response({"status": False, "code": 400})
+        good_slug = request.data.get("good_slug")
+        if not store_models.Goods.objects.filter(slug=good_slug).exists():
+            return Response({"status": False, "code": 404})
+        goods = store_models.Goods.objects.filter(slug=good_slug)
+        usergoods = models.UserGoods.objects.filter(goods=goods)
+        if not usergoods.exists():
+            return Response({"status": False, "code": 400})
+        usergoods.first().delete
+        return Response({"status": True})
