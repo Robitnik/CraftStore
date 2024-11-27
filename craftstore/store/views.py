@@ -8,7 +8,10 @@ from django.http import HttpResponse, HttpRequest
 from user.utils import get_user_by_request
 from .components import dbutils
 
-
+class Test(APIView):
+    def get(self, request: HttpRequest):
+        goods1 = models.Goods.objects.get(pk=1)
+        return Response(goods1.as_dict(fields=["title"]))
 
 def main(request:HttpRequest):
     return  HttpResponse("Craftstore")
@@ -17,17 +20,9 @@ class GoodsViewFilter(APIView):
     def get(self, request, *args, **kwargs):
         model = models.Goods
         queryset = object_filter(request=request, object=model.objects.all())
-        fields = [
-            'store[id,name,slug]', 
-            'slug', 'title', 'price', 
-            'poster', 'description', 
-            'views_count', 'bought_count',
-            'published', 'count', 
-            'date_published', 'date_updated',
-            'author[id,username]'
-        ]
-        serializer = serializers.get_serializer_for_model(queryset=queryset, model=model, fields=fields)
-        data = serializer.data
+        data = []
+        for good in queryset:
+            data.append(good.as_mini_dict(fields=["poster", "slug", "title", "price", "views_count", "date_published", "store"]))
         return Response(data, status=status.HTTP_200_OK)
 
 

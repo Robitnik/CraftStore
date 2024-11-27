@@ -11,17 +11,19 @@ from . import models
 class ImageSet(APIView):
     def post(self, request: HttpRequest):
         user = get_user_by_request(request=request)
+        url = request.data.get("path")
         if not user:
             return Response({"status": False, "code": 400})
-        if not path:
+        if not url:
             return Response({"error": "Path is required"}, status=400)
-        url = request.data.get("path")
-        path = f"images/{path}"
+        url = f"images/{url}"
         uploaded_file = request.FILES.get("image")
         if not uploaded_file:
             return Response({"error": "Image file is required"}, status=400)
         img = image_to_cloud(save_uploaded_file(uploaded_file), url=url)
-        return Response(img.as_dict())
+        data = img.as_mini_dict()
+        data["status"] = True
+        return Response(data)
     def delete(self, request: HttpRequest):
         user = get_user_by_request(request=request)
         if not user:

@@ -178,7 +178,7 @@ class UserFavoritesAPI(APIView):
             return Response({"status": False, "code": 400})
         data = {"count": user.favorites.count(),"goods":[]}
         for goods in user.favorites.all():
-            data["goods"].append(goods.goods.as_dict())
+            data["goods"].append(goods.goods.as_mini_dict(fields=["poster", "slug", "title", "price", "views_count", "date_published", "store"]))
         return Response(data)
     def post(self, request: HttpRequest):
         user = user_itils.get_user_by_request(request)
@@ -214,7 +214,7 @@ class UserHistoryAPI(APIView):
             return Response({"status": False, "code": 400})
         data = {"count": user.user_views_history.count(),"goods":[]}
         for goods in user.user_views_history.all():
-            data["goods"].append(goods.goods.as_mini_dict())
+            data["goods"].append(goods.goods.as_mini_dict(fields=["poster", "slug", "title", "price", "views_count", "date_published", "store"]))
         return Response(data)
 
 
@@ -225,7 +225,7 @@ class UserCartAPI(APIView):
             return Response({"status": False, "code": 400})
         data = {"count": user.cart.count(),"goods":[]}
         for goods in user.cart.all():
-            data["goods"].append(goods.goods.as_mini_dict())
+            data["goods"].append(goods.goods.as_mini_dict(fields=["poster", "slug", "title", "price", "views_count", "date_published", "store"]))
         return Response(data)
     def post(self, request: HttpRequest):
         user = user_itils.get_user_by_request(request)
@@ -235,10 +235,13 @@ class UserCartAPI(APIView):
         if not store_models.Goods.objects.filter(slug=good_slug).exists():
             return Response({"status": False, "code": 404})
         goods = store_models.Goods.objects.filter(slug=good_slug)
-        usergoods = models.UserGoods.objects.get_or_create(goods=goods, user_favorites=user)
-        user.cart.add(usergoods)
-        user.save()
-        return Response({"status": True})
+        usergoods, created = models.UserGoods.objects.get_or_create(goods=goods, user_cart=user)
+        if created:
+            user.cart.add(usergoods)
+            user.save()
+        else:
+            usergoods.count =+ 1
+        return Response({"status": True, "count":usergoods.count, "good_slug": good_slug})
     def delete(self, request: HttpRequest):
         user = user_itils.get_user_by_request(request)
         if not user:
@@ -250,5 +253,11 @@ class UserCartAPI(APIView):
         usergoods = models.UserGoods.objects.filter(goods=goods)
         if not usergoods.exists():
             return Response({"status": False, "code": 400})
-        usergoods.first().delete
+        usergoods = usergoods.first()
+        if usergoods.count > 1:
+            usergoods.count =- 1
+            usergoods.save()
+            return Response({"status": True, "count":usergoods.count, "good_slug": good_slug})
+        else:
+            usergoods.delete()
         return Response({"status": True})

@@ -43,17 +43,17 @@ class User(AbstractUser):
     def as_dict(self, fields=None):
         fields = fields or ['username', 'id', 'slug', 'avatar', 'address', 'phone_number', 'user_gender']
         data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
-        data['avatar'] = self.get_avatar_url()
-        data['groups'] = [group.as_mini_dict() for group in self.groups.all()]
-        data['favorites'] = [fav.as_dict() for fav in self.favorites.all()]
-        data['views_history'] = [view.as_dict() for view in self.views_history.all()]
-        data['cart'] = [item.as_dict() for item in self.cart.all()]
+        data.data['avatar'] = self.get_avatar_url()
+        data.data['groups'] = [group.as_mini_dict() for group in self.groups.all()]
+        data.data['favorites'] = [fav.as_dict() for fav in self.favorites.all()]
+        data.data['views_history'] = [view.as_dict() for view in self.views_history.all()]
+        data.data['cart'] = [item.as_dict() for item in self.cart.all()]
         return data.data
 
     def as_mini_dict(self, fields=None):
         fields = fields or ['username', 'id', 'slug', 'avatar']
         data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
-        data['avatar'] = self.get_avatar_url()
+        data.data['avatar'] = self.get_avatar_url()
         return data.data
 
 
@@ -67,11 +67,12 @@ class Group(AbstractGroup):
 
     def as_mini_dict(self, fields=None):
         fields = fields or ['id', 'name']
-        return get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
-
+        data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
+        return data.data
 
 class UserGoods(models.Model):
     goods = models.ForeignKey("store.Goods", on_delete=models.CASCADE)
+    count = models.IntegerField(default=1)
     date = models.DateTimeField(auto_now_add=True, blank=True)
 
     def as_dict(self, fields=None):
@@ -94,11 +95,13 @@ class ValidatedEmails(models.Model):
 
     def as_dict(self, fields=None):
         fields = fields or ['email', 'status', 'date', 'code']
-        return get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
+        data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
+        return data.data
 
     def as_mini_dict(self, fields=None):
         fields = fields or ['email', 'status']
-        return get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
+        data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
+        return data.data
 
 
 class MailCode(models.Model):
@@ -115,9 +118,10 @@ class MailCode(models.Model):
     def as_dict(self, fields=None):
         fields = fields or ['code', 'user', 'date_pub', 'date_updated']
         data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
-        data['user'] = self.user.as_mini_dict()
+        data.data['user'] = self.user.as_mini_dict()
         return data.data
 
     def as_mini_dict(self, fields=None):
         fields = fields or ['code', 'date_pub']
-        return get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
+        data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
+        return data.data

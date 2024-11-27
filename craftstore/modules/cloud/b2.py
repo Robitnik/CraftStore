@@ -21,7 +21,6 @@ def upload_file(file_path, end_file_path, cloud_id):
 
 
 def delete_file(file_path, cloud_id):
-    try:
         if not file_path:
             return False, "Not file_path"
         cloud = Cloud.objects.get(pk=cloud_id)
@@ -31,7 +30,5 @@ def delete_file(file_path, cloud_id):
         bucket = b2_api.get_bucket_by_name(cloud.bucket_name)
         file = bucket.get_file_info_by_name(file_name=file_path)
         file_dict = file.as_dict()
-        b2_api.delete_file_version(file_id=file_dict["file_id"], file_name=file_dict["fileName"])
+        b2_api.delete_file_version(file_id=file_dict["fileId"], file_name=file_dict["fileName"])
         return True, "True"
-    except Exception as e:
-        return False, str(e)

@@ -18,10 +18,12 @@ class Store(models.Model):
     def as_dict(self, fields=None):
         fields = fields or ['id','slug','name','avatar','describe']
         data = get_serializer_for_model(queryset=self, model=Store, fields=fields, many=False)
+        data.data["avatar"] = self.avatar.get_absolute_url()
         return data.data
     def as_mini_dict(self, fields=None):
         fields = fields or ['id','slug','name','avatar']
         data = get_serializer_for_model(queryset=self, model=Store, fields=fields, many=False)
+        data.data["avatar"] = self.avatar.get_absolute_url()
         return data.data
 
     def save(self, *args, **kwargs):
@@ -61,14 +63,18 @@ class Goods(models.Model):
     def as_dict(self, fields=None):
         fields = fields or ['id', 'slug', 'title', 'price', 'poster', 'description', 'views_count', 'bought_count', 'store', 'date_published', 'date_updated']
         data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
-        data['characteristic'] = [ch.as_dict() for ch in self.characteristic.all()]
-        data['category'] = [cat.as_dict() for cat in self.category.all()]
-        data['gallery'] = [img.as_dict() for img in self.gallery.all()]
+        data.data["store"] = self.store.as_dict()
+        data.data["poster"] = self.poster.build_img_url()
+        data.data['characteristic'] = [ch.as_dict() for ch in self.characteristic.all()]
+        data.data['category'] = [cat.as_dict() for cat in self.category.all()]
+        data.data['gallery'] = [img.as_dict() for img in self.gallery.all()]
         return data.data
 
     def as_mini_dict(self, fields=None):
         fields = fields or ['id', 'slug', 'title', 'price', 'poster', 'views_count', 'store', 'date_published', 'date_updated']
         data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
+        data.data["poster"] = self.poster.build_img_url()
+        data.data["store"] = self.store.as_mini_dict()
         return data.data
 
 

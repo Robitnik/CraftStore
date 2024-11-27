@@ -35,7 +35,7 @@ class UserStore:
             store.slug = store_slug
             store.owner = self.user
             store.save()
-            return {"status": True, "store": store.as_dict()}
+            return {"status": True, "store": store.as_dict(fields=['slug','name','avatar'])}
 
 
     def delete_store(self, request: HttpRequest) -> dict:

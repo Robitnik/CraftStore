@@ -30,7 +30,7 @@ class Image(models.Model):
     path = models.ImageField(blank=True, upload_to="static", null=True)
     url = models.CharField(max_length=1000, blank=True)
     create_at = models.DateTimeField(auto_now_add=True)
-    slug = models.SlugField(blank=True, unique=True)
+    slug = models.SlugField(blank=True)
     author = models.ForeignKey("user.USER", related_name="images", on_delete=models.CASCADE, null=True)
 
     class Meta:
@@ -49,18 +49,21 @@ class Image(models.Model):
     def as_dict(self, fields=None):
         fields = fields or ['id', 'url', 'create_at', 'slug']
         data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
+        data = data.data
         data['url'] = self.build_img_url()
         data['author'] = self.author.as_mini_dict() if self.author else None
-        return data.data
+        return data
 
     def as_mini_dict(self, fields=None):
         fields = fields or ['id', 'url', 'slug']
         data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
+        data = data.data
         data['url'] = self.build_img_url()
-        return data.data
+        return data
 
 
     def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
         from modules.cloud.b2 import upload_file
         import os
         if not self.slug:

@@ -19,9 +19,9 @@ class Chat(models.Model):
     def as_dict(self, fields=None):
         fields = fields or ['slug', 'id', 'date']
         data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
-        data['members'] = [member.as_mini_dict() for member in self.members.all()]
-        data['last_message'] = self.get_last_message()
-        data['unread_message_count'] = self.masseges.filter(read=False).count()
+        data.data['members'] = [member.as_mini_dict() for member in self.members.all()]
+        data.data['last_message'] = self.get_last_message()
+        data.data['unread_message_count'] = self.masseges.filter(read=False).count()
         return data.data
 
     def as_mini_dict(self, fields=None):
@@ -46,8 +46,8 @@ class Massage(models.Model):
     def as_dict(self, fields=None):
         fields = fields or ['massege', 'read', 'send_date', 'edit_date']
         data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
-        data['sender'] = self.sender.as_mini_dict()
-        data['date'] = {"send": str(self.send_date), "edit": str(self.edit_date)}
+        data.data['sender'] = self.sender.as_mini_dict()
+        data.data['date'] = {"send": str(self.send_date), "edit": str(self.edit_date)}
         return data.data
 
     def as_mini_dict(self, fields=None):
