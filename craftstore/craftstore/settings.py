@@ -39,6 +39,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'store.middleware.dblogger.QueryLoggerMiddleware',
+    'user.middleware.request.UserMiddleware',
 ]
 
 ROOT_URLCONF = 'craftstore.urls'

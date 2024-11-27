@@ -5,15 +5,16 @@ from user.utils import get_user_by_request
 from modules.files import save_uploaded_file
 from cdn.utils import image_to_cloud
 from rest_framework.views import APIView
-from rest_framework.response import Response
+from rest_framework.request import HttpRequest
 from . import models
+from modules.decorators.user import user_required
+
 
 class ImageSet(APIView):
+    @user_required
     def post(self, request: HttpRequest):
-        user = get_user_by_request(request=request)
+        user = request.user
         url = request.data.get("path")
-        if not user:
-            return Response({"status": False, "code": 400})
         if not url:
             return Response({"error": "Path is required"}, status=400)
         url = f"images/{url}"
@@ -24,10 +25,9 @@ class ImageSet(APIView):
         data = img.as_mini_dict()
         data["status"] = True
         return Response(data)
+    @user_required
     def delete(self, request: HttpRequest):
-        user = get_user_by_request(request=request)
-        if not user:
-            return Response({"status": False, "code": 400})
+        user = request.user
         img_id = request.data.get("id")
         if not models.Image.objects.filter(pk=img_id).exists():
             return Response({"status": False, "code": 404}, status=404)

@@ -1,17 +1,17 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.request import HttpRequest
 from modules import serializers, filters, datetimeutils
 from user.utils import get_user_by_request
 from . import models
 from django.utils.dateparse import parse_datetime
 from django.db.models import Max
-
+from modules.decorators.user import user_required
 
 class UserChatSet(APIView):
-    def get(self, request):
-        user = get_user_by_request(request=request)
-        if not user:
-            return Response({"status": False, "code": 400})
+    @user_required
+    def get(self, request: HttpRequest):
+        user = request.user
         chats = models.Chat.objects.filter(members=user)
         chats = chats.annotate(last_message_date=Max('masseges__send_date')).order_by('-last_message_date')
         chats = filters.object_filter(request=request, object=chats)
@@ -28,12 +28,11 @@ class UserChatSet(APIView):
 
 
 class ChatMessageSet(APIView):
-    def get(self, request, slug):
+    @user_required
+    def get(self, request: HttpRequest, slug):
         user = get_user_by_request(request)
         if not models.Chat.objects.filter(slug=slug).exists():
             return Response({"status": False, "message": "Chat undefined"})
-        if not user:
-            return Response({"status": False, "message": "User undefined"})
         chat = models.Chat.objects.get(slug=slug)
         date_str = request.GET.get("date", datetimeutils.get_today_date())
         if isinstance(date_str, str):

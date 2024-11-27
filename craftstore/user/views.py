@@ -1,18 +1,19 @@
 from modules import serializers
 from . import utils as user_itils, models
 from store import models as store_models
-from django.http import HttpRequest
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import authenticate, login as auth_login_user
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.request import HttpRequest
 from modules.mail import mail
 from modules.validators import validator
 from modules.serializers import get_serializer_for_model
 from modules.html import render
+from modules.decorators.user import user_required
+
 
 class UserLogin(APIView):
-    @csrf_exempt
     def post(self, request: HttpRequest):
         username = request.data.get('username')
         password = request.data.get('password')
@@ -94,11 +95,12 @@ class UserRegister(APIView):
 
 
 class UserEdit(APIView):
+    @user_required
     def post(self, request: HttpRequest):
         email_status, phone_status = False
         email = request.data.get("email")
         phone_number = request.data.get('phone_number')
-        user = user_itils.get_user_by_request(request=request)
+        user = request.user
         if email:
             email_status = validator.validate_email(email=email)
             if email_status:
@@ -107,6 +109,7 @@ class UserEdit(APIView):
             phone_status = validator.valite_phone_number(phone=phone_number)
             if phone_status:
                 user.phone_number = phone_number
+        user.save()
         return Response({"email_status": email_status, "phone_status": phone_status})
 
 
@@ -162,9 +165,9 @@ class UserResetPassword(APIView):
 
 
 class User(APIView):
+    @user_required
     def get(self, request: HttpRequest):
-        user = user_itils.get_user_by_request(request=request)
-        serializer = get_serializer_for_model(queryset=user, 
+        serializer = get_serializer_for_model(queryset=request.user, 
                                               model=models.User,
                                               fields=["avatar", "username", "first_name", "last_name", "is_active", "last_login", "date_joined"], 
                                               many=False)
@@ -172,18 +175,16 @@ class User(APIView):
 
 
 class UserFavoritesAPI(APIView):
+    @user_required
     def get(self, request: HttpRequest):
-        user = user_itils.get_user_by_request(request)
-        if not user:
-            return Response({"status": False, "code": 400})
+        user = request.user
         data = {"count": user.favorites.count(),"goods":[]}
         for goods in user.favorites.all():
             data["goods"].append(goods.goods.as_mini_dict(fields=["poster", "slug", "title", "price", "views_count", "date_published", "store"]))
         return Response(data)
+    @user_required
     def post(self, request: HttpRequest):
-        user = user_itils.get_user_by_request(request)
-        if not user:
-            return Response({"status": False, "code": 400})
+        user = request.user
         good_slug = request.data.get("good_slug")
         if not store_models.Goods.objects.filter(slug=good_slug).exists():
             return Response({"status": False, "code": 404})
@@ -192,15 +193,14 @@ class UserFavoritesAPI(APIView):
         user.favorites.add(usergoods)
         user.save()
         return Response({"status": True})
+    @user_required
     def delete(self, request: HttpRequest):
-        user = user_itils.get_user_by_request(request)
-        if not user:
-            return Response({"status": False, "code": 400})
+        user = request.user
         good_slug = request.data.get("good_slug")
         if not store_models.Goods.objects.filter(slug=good_slug).exists():
             return Response({"status": False, "code": 404})
         goods = store_models.Goods.objects.filter(slug=good_slug)
-        usergoods = models.UserGoods.objects.filter(goods=goods)
+        usergoods = models.UserGoods.objects.filter(goods=goods, user_favorites=user)
         if not usergoods.exists():
             return Response({"status": False, "code": 400})
         usergoods.first().delete
@@ -208,10 +208,9 @@ class UserFavoritesAPI(APIView):
 
 
 class UserHistoryAPI(APIView):
+    @user_required
     def get(self, request: HttpRequest):
-        user = user_itils.get_user_by_request(request)
-        if not user:
-            return Response({"status": False, "code": 400})
+        user = request.user
         data = {"count": user.user_views_history.count(),"goods":[]}
         for goods in user.user_views_history.all():
             data["goods"].append(goods.goods.as_mini_dict(fields=["poster", "slug", "title", "price", "views_count", "date_published", "store"]))
@@ -219,18 +218,16 @@ class UserHistoryAPI(APIView):
 
 
 class UserCartAPI(APIView):
+    @user_required
     def get(self, request: HttpRequest):
-        user = user_itils.get_user_by_request(request)
-        if not user:
-            return Response({"status": False, "code": 400})
+        user = request.user
         data = {"count": user.cart.count(),"goods":[]}
         for goods in user.cart.all():
             data["goods"].append(goods.goods.as_mini_dict(fields=["poster", "slug", "title", "price", "views_count", "date_published", "store"]))
         return Response(data)
+    @user_required
     def post(self, request: HttpRequest):
-        user = user_itils.get_user_by_request(request)
-        if not user:
-            return Response({"status": False, "code": 400})
+        user = request.user
         good_slug = request.data.get("good_slug")
         if not store_models.Goods.objects.filter(slug=good_slug).exists():
             return Response({"status": False, "code": 404})
@@ -242,15 +239,14 @@ class UserCartAPI(APIView):
         else:
             usergoods.count =+ 1
         return Response({"status": True, "count":usergoods.count, "good_slug": good_slug})
+    @user_required
     def delete(self, request: HttpRequest):
-        user = user_itils.get_user_by_request(request)
-        if not user:
-            return Response({"status": False, "code": 400})
+        user = request.user
         good_slug = request.data.get("good_slug")
         if not store_models.Goods.objects.filter(slug=good_slug).exists():
             return Response({"status": False, "code": 404})
         goods = store_models.Goods.objects.filter(slug=good_slug)
-        usergoods = models.UserGoods.objects.filter(goods=goods)
+        usergoods = models.UserGoods.objects.filter(goods=goods, user_cart=user)
         if not usergoods.exists():
             return Response({"status": False, "code": 400})
         usergoods = usergoods.first()
