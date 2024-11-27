@@ -1,7 +1,5 @@
-from modules import serializers
-from . import utils as user_itils, models
+from . import models
 from store import models as store_models
-from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import authenticate, login as auth_login_user
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -10,7 +8,9 @@ from modules.mail import mail
 from modules.validators import validator
 from modules.serializers import get_serializer_for_model
 from modules.html import render
-from modules.decorators.user import user_required
+from django.utils.decorators import method_decorator
+from modules.decorators.user_decorators import user_required
+
 
 
 class UserLogin(APIView):
@@ -95,7 +95,7 @@ class UserRegister(APIView):
 
 
 class UserEdit(APIView):
-    @user_required
+    @method_decorator(user_required)
     def post(self, request: HttpRequest):
         email_status, phone_status = False
         email = request.data.get("email")
@@ -165,7 +165,7 @@ class UserResetPassword(APIView):
 
 
 class User(APIView):
-    @user_required
+    @method_decorator(user_required)
     def get(self, request: HttpRequest):
         serializer = get_serializer_for_model(queryset=request.user, 
                                               model=models.User,
@@ -175,14 +175,14 @@ class User(APIView):
 
 
 class UserFavoritesAPI(APIView):
-    @user_required
+    @method_decorator(user_required)
     def get(self, request: HttpRequest):
         user = request.user
         data = {"count": user.favorites.count(),"goods":[]}
         for goods in user.favorites.all():
             data["goods"].append(goods.goods.as_mini_dict(fields=["poster", "slug", "title", "price", "views_count", "date_published", "store"]))
         return Response(data)
-    @user_required
+    @method_decorator(user_required)
     def post(self, request: HttpRequest):
         user = request.user
         good_slug = request.data.get("good_slug")
@@ -193,7 +193,7 @@ class UserFavoritesAPI(APIView):
         user.favorites.add(usergoods)
         user.save()
         return Response({"status": True})
-    @user_required
+    @method_decorator(user_required)
     def delete(self, request: HttpRequest):
         user = request.user
         good_slug = request.data.get("good_slug")
@@ -208,7 +208,7 @@ class UserFavoritesAPI(APIView):
 
 
 class UserHistoryAPI(APIView):
-    @user_required
+    @method_decorator(user_required)
     def get(self, request: HttpRequest):
         user = request.user
         data = {"count": user.user_views_history.count(),"goods":[]}
@@ -218,14 +218,14 @@ class UserHistoryAPI(APIView):
 
 
 class UserCartAPI(APIView):
-    @user_required
+    @method_decorator(user_required)
     def get(self, request: HttpRequest):
         user = request.user
         data = {"count": user.cart.count(),"goods":[]}
         for goods in user.cart.all():
             data["goods"].append(goods.goods.as_mini_dict(fields=["poster", "slug", "title", "price", "views_count", "date_published", "store"]))
         return Response(data)
-    @user_required
+    @method_decorator(user_required)
     def post(self, request: HttpRequest):
         user = request.user
         good_slug = request.data.get("good_slug")
@@ -239,7 +239,7 @@ class UserCartAPI(APIView):
         else:
             usergoods.count =+ 1
         return Response({"status": True, "count":usergoods.count, "good_slug": good_slug})
-    @user_required
+    @method_decorator(user_required)
     def delete(self, request: HttpRequest):
         user = request.user
         good_slug = request.data.get("good_slug")

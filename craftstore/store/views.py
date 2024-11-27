@@ -8,7 +8,8 @@ from modules import serializers
 from django.http import HttpResponse
 from user.utils import get_user_by_request
 from .components import dbutils
-from modules.decorators.user import user_required
+from django.utils.decorators import method_decorator
+from modules.decorators.user_decorators import user_required
 
 class Test(APIView):
     def get(self, request: HttpRequest):
@@ -31,7 +32,7 @@ class GoodsViewFilter(APIView):
 
 
 class UserStore(APIView):
-    @user_required
+    @method_decorator(user_required)
     def get(self, request: HttpRequest, *args, **kwargs):
         user = request.user
         model = models.Goods
@@ -43,12 +44,12 @@ class UserStore(APIView):
         )
         data = serializer.data
         return Response(data, status=status.HTTP_200_OK)
-    @user_required
+    @method_decorator(user_required)
     def post(self, request: HttpRequest, *args, **kwargs):
         user = request.user
         store = dbutils.UserStore(user=user)
         return Response(store.create_store(request=request))
-    @user_required
+    @method_decorator(user_required)
     def delete(self, request: HttpRequest, *args, **kwargs):
         user = request.user
         store = dbutils.UserStore(user=user)
@@ -72,7 +73,7 @@ class StoreGoodSet(APIView):
     def get(self, request: HttpRequest, *args, **kwargs):
         # товари магазину
         return Response({})
-    @user_required
+    @method_decorator(user_required)
     def post(self, request: HttpRequest, *args, **kwargs):
         user = request.user
         store = user.store
@@ -86,13 +87,13 @@ class StoreGoodSet(APIView):
         else:
             data = {"status": False, "code": 404}
         return Response(data)
-    @user_required
+    @method_decorator(user_required)
     def put(self, request: HttpRequest, *args, **kwargs):
         user = request.user
         store = user.store
         good = dbutils.StoreGood(store=store, user=user)
         return Response(good.update_good(request=request))
-    @user_required
+    @method_decorator(user_required)
     def delete(self, request: HttpRequest, *args, **kwargs):
         user = request.user
         store = user.store

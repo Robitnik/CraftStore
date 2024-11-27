@@ -7,11 +7,12 @@ from cdn.utils import image_to_cloud
 from rest_framework.views import APIView
 from rest_framework.request import HttpRequest
 from . import models
-from modules.decorators.user import user_required
+from django.utils.decorators import method_decorator
+from modules.decorators.user_decorators import user_required
 
 
 class ImageSet(APIView):
-    @user_required
+    @method_decorator(user_required)
     def post(self, request: HttpRequest):
         user = request.user
         url = request.data.get("path")
@@ -25,7 +26,7 @@ class ImageSet(APIView):
         data = img.as_mini_dict()
         data["status"] = True
         return Response(data)
-    @user_required
+    @method_decorator(user_required)
     def delete(self, request: HttpRequest):
         user = request.user
         img_id = request.data.get("id")

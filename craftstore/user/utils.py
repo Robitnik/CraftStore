@@ -19,7 +19,7 @@ def get_user(session_key=None, username=None):
 
 
 def get_user_by_request(request: HttpRequest) -> User:
-    if request.user and request.user.is_authenticated:
+    if hasattr(request, 'user') and request.user.is_authenticated:
         return request.user
     session_key = request.GET.get('token', str(request.headers.get("authorization")))
     user, its_me = get_user(session_key=session_key)

@@ -6,7 +6,7 @@ from user.utils import get_user_by_request
 from . import models
 from django.utils.dateparse import parse_datetime
 from django.db.models import Max
-from modules.decorators.user import user_required
+from modules.decorators.user_decorators import user_required
 
 class UserChatSet(APIView):
     @user_required
