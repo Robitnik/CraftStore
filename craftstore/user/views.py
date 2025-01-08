@@ -21,9 +21,9 @@ class UserLogin(APIView):
         if user:
             auth_login_user(request, user)
             session_key = request.session.session_key
-            return Response({"success": True, "id": user.pk, "user_token": session_key,})
+            return Response({"status": True, "id": user.pk, "user_token": session_key,})
         else:
-            return Response({"success": False, "message": "Логін або пароль не співпадають з нашими", "username": username, "password": password})
+            return Response({"status": False, "message": "Логін або пароль не співпадають з нашими", "username": username, "password": password})
 
 
 class UserRegister(APIView):
@@ -34,7 +34,7 @@ class UserRegister(APIView):
             is_email = models.User.objects.filter(email=email).exists()
             is_username = models.User.objects.filter(username=username).exists()
             
-            if is_email and is_username:
+            if is_email or is_username:
                 return Response({"status": False, "is_email": is_email, "is_username": is_username})
             validated_email = models.ValidatedEmails(email=email)
             validated_email.save()
@@ -54,7 +54,7 @@ class UserRegister(APIView):
                 validated_email = validated_email.first()
                 validated_email.delete()
                 return Response({"status": True})
-            return Response({"status": True, "code": 404, "message": "Invalid code"})
+            return Response({"status": False, "code": 404, "message": "Invalid code"})
         elif request.GET.get("step") == "3":
             username = request.data.get("username")
             email = request.data.get("email")
