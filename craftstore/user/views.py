@@ -65,20 +65,20 @@ class UserRegister(APIView):
             password = request.data.get("password")
             repeat_password = request.data.get("repeat_password")
             if len(username) <= 2:
-                return Response({"success": False, "message": "Логін має бути більше 2 букв"})
+                return Response({"status": False, "message": "Логін має бути більше 2 букв"})
             if "." not in email or "@" not in email:
-                return Response({"success": False, "message": "Невірна електронна скринька"})
+                return Response({"status": False, "message": "Невірна електронна скринька"})
             if password != repeat_password:
-                return Response({"success": False, "message": "Паролі не співпадають"})
+                return Response({"status": False, "message": "Паролі не співпадають"})
             validatet_password_status, validatet_password_message = validator.validate_password(password=password)
             if not validatet_password_status:
-                return Response({"success": False, "message": validatet_password_message})
+                return Response({"status": False, "message": validatet_password_message})
             user = models.User.objects.filter(email=email)
             if user.exists():
-                return Response({"success": False, "message": f"Email {email} Уже зареєстровано"})
+                return Response({"status": False, "message": f"Email {email} Уже зареєстровано"})
             user = models.User.objects.filter(username=username)
             if user.exists():
-                return Response({"success": False, "message": f"Користувач {username} Уже зареєстрований"})
+                return Response({"status": False, "message": f"Користувач {username} Уже зареєстрований"})
             user = models.User()
             user.username = username
             user.email = email
