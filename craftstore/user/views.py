@@ -130,7 +130,6 @@ class UserResetPassword(APIView):
                 html_content=html_content,
                 recipient_email=email
             )
-
             status = new_mail.send_email()
             return Response({"status": status,})
         if request.GET.get("step") == "2":
@@ -143,9 +142,10 @@ class UserResetPassword(APIView):
             password = models.MailCode.objects.filter(user=user, code=code)
             if not password.exists():
                 return Response({"status": False, "code": 404})
-            return Response({"status": True, "id": password.pk})
+            password = password.first()
+            return Response({"status": True, "password_id": password.pk})
         if request.GET.get("step") == "3":
-            password_id = request.data.get("id")
+            password_id = request.data.get("password_id")
             new_password = request.data.get("new_password")
             new_repeat_password = request.data.get("repeat_password")
             password = models.MailCode.objects.filter(pk=password_id)

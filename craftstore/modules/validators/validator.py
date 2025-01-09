@@ -19,6 +19,8 @@ def valite_phone_number(phone):
 
 
 def validate_password(password):
+    if not password:
+        return False, "Не отримано парль!"
     # 1. Перевірка довжини
     if len(password) < 8:
         return False, "Пароль повинен містити щонайменше 8 символів."

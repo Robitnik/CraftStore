@@ -14,7 +14,6 @@ from modules.decorators.user_decorators import user_required
 class ImageSet(APIView):
     @method_decorator(user_required)
     def post(self, request: HttpRequest):
-        user = request.user
         url = request.data.get("path")
         if not url:
             return Response({"error": "Path is required"}, status=400)
