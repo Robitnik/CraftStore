@@ -1,8 +1,7 @@
 from functools import wraps
 from rest_framework.response import Response
 from rest_framework.request import HttpRequest
-from django.contrib.auth.models import AnonymousUser
-
+from user.utils import get_user_by_request
 
 def user_required(view_func):
     """
@@ -11,7 +10,8 @@ def user_required(view_func):
     """
     @wraps(view_func)
     def _wrapped_view(request: HttpRequest, *args, **kwargs):
-        if not request.user or type(request.user) == AnonymousUser:
+        user = get_user_by_request(request)
+        if not user:
             return Response({"status": False, "error": "Authentication required.", "code": 401}, status=401)
         return view_func(request, *args, **kwargs)
 

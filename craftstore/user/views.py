@@ -10,10 +10,11 @@ from modules.serializers import get_serializer_for_model
 from modules.html import render
 from django.utils.decorators import method_decorator
 from modules.decorators.user_decorators import user_required
-
-
+from django.middleware.csrf import get_token
+from django.views.decorators.csrf import csrf_exempt
 
 class UserLogin(APIView):
+    @method_decorator(csrf_exempt)
     def post(self, request: HttpRequest):
         username = request.data.get('username')
         password = request.data.get('password')
@@ -21,9 +22,22 @@ class UserLogin(APIView):
         if user:
             auth_login_user(request, user)
             session_key = request.session.session_key
-            return Response({"status": True, "id": user.pk, "user_token": session_key,})
+            csrf_token = get_token(request)
+
+            response = Response({
+                "status": True,
+                "id": user.pk,
+                "Authorization": session_key,
+                "csrftoken": csrf_token,
+            })
+            return response
         else:
-            return Response({"status": False, "message": "Логін або пароль не співпадають з нашими", "username": username, "password": password})
+            return Response({
+                "status": False,
+                "message": "Логін або пароль не співпадають з нашими",
+                "username": username,
+                "password": password,
+            })
 
 
 class UserRegister(APIView):

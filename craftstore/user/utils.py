@@ -2,6 +2,7 @@ from django.http import HttpRequest
 from django.contrib.sessions.models import Session
 from .models import User
 
+
 def get_user(session_key=None, username=None):
     its_me = False
     user = None
@@ -19,9 +20,7 @@ def get_user(session_key=None, username=None):
 
 
 def get_user_by_request(request: HttpRequest) -> User:
-    if hasattr(request, 'user') and request.user.is_authenticated:
-        return request.user
-    session_key = request.GET.get('token', str(request.headers.get("authorization")))
+    session_key = str(request.headers.get("Authorization"))
     user, its_me = get_user(session_key=session_key)
     return user
 

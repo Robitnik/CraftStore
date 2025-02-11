@@ -1,5 +1,7 @@
 from pathlib import Path
 import os
+from split_settings.tools import include
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -7,8 +9,13 @@ SECRET_KEY = 'django-insecure-=0er3+1pth*x(4y(wjma1g4i7owr10cth34@(s5ul6j02to&)v
 
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
 
+]
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+    "https://lv6xwh7d-3000.euw.devtunnels.ms",
+]
 
 
 INSTALLED_APPS = [
@@ -36,11 +43,12 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'user.middleware.request.UserMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'store.middleware.dblogger.QueryLoggerMiddleware',
-    'user.middleware.request.UserMiddleware',
 ]
+
 
 ROOT_URLCONF = 'craftstore.urls'
 
@@ -120,22 +128,12 @@ REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
         'rest_framework.renderers.BrowsableAPIRenderer',
-    ]
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny',
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [],
 }
 
 
-CORS_ALLOW_ALL_ORIGINS = True
-
-"""
-CORS_ALLOWED_ORIGINS = [
-   "http://127.0.0.1:9000",
-]
-CORS_ALLOW_HEADERS = (
-    "accept",
-    "authorization",
-    "content-type",
-    "user-agent",
-    "x-csrftoken",
-    "x-requested-with",
-)
-"""
+include("./config/corsheaders.py")
