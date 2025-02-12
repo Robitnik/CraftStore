@@ -10,11 +10,12 @@ SECRET_KEY = 'django-insecure-=0er3+1pth*x(4y(wjma1g4i7owr10cth34@(s5ul6j02to&)v
 DEBUG = True
 
 ALLOWED_HOSTS = [
-
+    "*",
 ]
 CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:3000",
     "https://lv6xwh7d-3000.euw.devtunnels.ms",
+    "http://localhost",
+    "http://127.0.0.1"
 ]
 
 
@@ -37,17 +38,18 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'user.middleware.request.UserMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'store.middleware.dblogger.QueryLoggerMiddleware',
 ]
+
+#    'user.middleware.authentication.CustomUserMiddleware',
 
 
 ROOT_URLCONF = 'craftstore.urls'
@@ -132,7 +134,9 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',
     ],
-    'DEFAULT_AUTHENTICATION_CLASSES': [],
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication'
+    ],
 }
 
 

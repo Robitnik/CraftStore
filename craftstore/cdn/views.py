@@ -1,17 +1,14 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
 from django.http import HttpRequest
-from user.utils import get_user_by_request
 from modules.files import save_uploaded_file
 from cdn.utils import image_to_cloud
 from . import models
-from django.utils.decorators import method_decorator
-from modules.decorators.user_decorators import user_required
-from django.views.decorators.csrf import csrf_exempt
 
 
 class ImageSet(APIView):
-    @method_decorator(user_required, name='dispatch')
+    permission_classes = [IsAuthenticated]
     def post(self, request: HttpRequest):
         url = request.data.get("path")
         if not url:
@@ -24,7 +21,6 @@ class ImageSet(APIView):
         data = img.as_mini_dict()
         data["status"] = True
         return Response(data)
-    @method_decorator(user_required, name='dispatch')
     def delete(self, request: HttpRequest):
         user = request.user
         img_id = request.data.get("id")

@@ -4,12 +4,11 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.request import HttpRequest
+from rest_framework.permissions import IsAuthenticated
 from modules import serializers
 from django.http import HttpResponse
-from user.utils import get_user_by_request
 from .components import dbutils
-from django.utils.decorators import method_decorator
-from modules.decorators.user_decorators import user_required
+
 
 class Test(APIView):
     def get(self, request: HttpRequest):
@@ -32,7 +31,8 @@ class GoodsViewFilter(APIView):
 
 
 class UserStore(APIView):
-    @method_decorator(user_required)
+    permission_classes = [IsAuthenticated]
+
     def get(self, request: HttpRequest, *args, **kwargs):
         user = request.user
         model = models.Goods
@@ -44,12 +44,14 @@ class UserStore(APIView):
         )
         data = serializer.data
         return Response(data, status=status.HTTP_200_OK)
-    @method_decorator(user_required)
+
+
     def post(self, request: HttpRequest, *args, **kwargs):
         user = request.user
         store = dbutils.UserStore(user=user)
         return Response(store.create_store(request=request))
-    @method_decorator(user_required)
+
+
     def delete(self, request: HttpRequest, *args, **kwargs):
         user = request.user
         store = dbutils.UserStore(user=user)
@@ -70,10 +72,10 @@ class StoreViewSet(APIView):
 
 
 class StoreGoodSet(APIView):
+    permission_classes = [IsAuthenticated]
     def get(self, request: HttpRequest, *args, **kwargs):
         # товари магазину
         return Response({})
-    @method_decorator(user_required)
     def post(self, request: HttpRequest, *args, **kwargs):
         user = request.user
         store = user.store
@@ -87,13 +89,12 @@ class StoreGoodSet(APIView):
         else:
             data = {"status": False, "code": 404}
         return Response(data)
-    @method_decorator(user_required)
+
     def put(self, request: HttpRequest, *args, **kwargs):
         user = request.user
         store = user.store
         good = dbutils.StoreGood(store=store, user=user)
         return Response(good.update_good(request=request))
-    @method_decorator(user_required)
     def delete(self, request: HttpRequest, *args, **kwargs):
         user = request.user
         store = user.store

@@ -8,14 +8,13 @@ from modules.mail import mail
 from modules.validators import validator
 from modules.serializers import get_serializer_for_model
 from modules.html import render
-from django.utils.decorators import method_decorator
-from modules.decorators.user_decorators import user_required
 from django.middleware.csrf import get_token
-from django.views.decorators.csrf import csrf_exempt
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+
 
 class UserLogin(APIView):
-    @method_decorator(csrf_exempt)
-    def post(self, request: HttpRequest):
+    def post(self, request):
         username = request.data.get('username')
         password = request.data.get('password')
         user = authenticate(request, username=username, password=password)
@@ -23,21 +22,19 @@ class UserLogin(APIView):
             auth_login_user(request, user)
             session_key = request.session.session_key
             csrf_token = get_token(request)
-
-            response = Response({
+            return Response({
                 "status": True,
                 "id": user.pk,
-                "Authorization": session_key,
+                "sessionid": session_key,
                 "csrftoken": csrf_token,
             })
-            return response
         else:
             return Response({
                 "status": False,
-                "message": "Логін або пароль не співпадають з нашими",
+                "message": "Логін або пароль не співпадають",
                 "username": username,
-                "password": password,
-            })
+            }, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 class UserRegister(APIView):
@@ -109,7 +106,7 @@ class UserRegister(APIView):
 
 
 class UserEdit(APIView):
-    @method_decorator(user_required)
+    permission_classes = [IsAuthenticated]
     def post(self, request: HttpRequest):
         email_status, phone_status = False
         email = request.data.get("email")
@@ -179,24 +176,25 @@ class UserResetPassword(APIView):
 
 
 class User(APIView):
-    @method_decorator(user_required)
-    def get(self, request: HttpRequest):
-        serializer = get_serializer_for_model(queryset=request.user, 
-                                              model=models.User,
-                                              fields=["avatar", "username", "first_name", "last_name", "is_active", "last_login", "date_joined"], 
-                                              many=False)
+    permission_classes = [IsAuthenticated]
+    def get(self, request, *args, **kwargs):
+        serializer = get_serializer_for_model(
+            queryset=request.user,
+            model=models.User,
+            fields=["avatar", "username", "first_name", "last_name", "is_active", "last_login", "date_joined"],
+            many=False
+        )
         return Response(serializer.data)
 
 
 class UserFavoritesAPI(APIView):
-    @method_decorator(user_required)
+    permission_classes = [IsAuthenticated]
     def get(self, request: HttpRequest):
         user = request.user
         data = {"count": user.favorites.count(),"goods":[]}
         for goods in user.favorites.all():
             data["goods"].append(goods.goods.as_mini_dict(fields=["poster", "slug", "title", "price", "views_count", "date_published", "store"]))
         return Response(data)
-    @method_decorator(user_required)
     def post(self, request: HttpRequest):
         user = request.user
         good_slug = request.data.get("good_slug")
@@ -207,7 +205,6 @@ class UserFavoritesAPI(APIView):
         user.favorites.add(usergoods)
         user.save()
         return Response({"status": True})
-    @method_decorator(user_required)
     def delete(self, request: HttpRequest):
         user = request.user
         good_slug = request.data.get("good_slug")
@@ -222,7 +219,7 @@ class UserFavoritesAPI(APIView):
 
 
 class UserHistoryAPI(APIView):
-    @method_decorator(user_required)
+    permission_classes = [IsAuthenticated]
     def get(self, request: HttpRequest):
         user = request.user
         data = {"count": user.user_views_history.count(),"goods":[]}
@@ -232,14 +229,13 @@ class UserHistoryAPI(APIView):
 
 
 class UserCartAPI(APIView):
-    @method_decorator(user_required)
+    permission_classes = [IsAuthenticated]
     def get(self, request: HttpRequest):
         user = request.user
         data = {"count": user.cart.count(),"goods":[]}
         for goods in user.cart.all():
             data["goods"].append(goods.goods.as_mini_dict(fields=["poster", "slug", "title", "price", "views_count", "date_published", "store"]))
         return Response(data)
-    @method_decorator(user_required)
     def post(self, request: HttpRequest):
         user = request.user
         good_slug = request.data.get("good_slug")
@@ -253,7 +249,6 @@ class UserCartAPI(APIView):
         else:
             usergoods.count =+ 1
         return Response({"status": True, "count":usergoods.count, "good_slug": good_slug})
-    @method_decorator(user_required)
     def delete(self, request: HttpRequest):
         user = request.user
         good_slug = request.data.get("good_slug")

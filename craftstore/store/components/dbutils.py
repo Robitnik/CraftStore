@@ -1,5 +1,6 @@
 from user.models import User
 from store.models import Store, Goods
+from cdn.models import Image
 from django.utils.text import slugify
 from django.http import HttpRequest
 from modules.files import save_uploaded_file
@@ -19,6 +20,8 @@ class UserStore:
             if Store.objects.filter(owner=self.user).exists():
                 return {"status": False, "message": "Ви не можете створити білше 1 магазину", "code": 301}
             data = request.data
+            if not data.get("store_name"):
+                return {"status": False, "message": "Не отримано назву магазину", "code": 405}
             slug = slugify(data.get("store_name"))
             store = Store.objects.filter(slug__exact=slug)
             if store.exists():
@@ -28,9 +31,9 @@ class UserStore:
             data = request.data
             store_name = data.get("store_name")
             store_slug = data.get("store_slug")
-            store_logo_path = save_uploaded_file(request.FILES.GET("store_logo")) if request.FILES.GET("store_logo") else None
+            store_logo_id = data.get("store_logo_id")
             store = Store()
-            store.avatar = image_to_cloud(store_logo_path, url=f"images/store/{store_slug}/logo/") if store_logo_path else None
+            store.avatar = Image.objects.get(pk=store_logo_id) if store_logo_id and Image.objects.filter(pk=store_logo_id).exists() else None
             store.name = store_name
             store.slug = store_slug
             store.owner = self.user

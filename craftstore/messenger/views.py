@@ -1,15 +1,15 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.request import HttpRequest
+from rest_framework.permissions import IsAuthenticated
 from modules import serializers, filters, datetimeutils
-from user.utils import get_user_by_request
 from . import models
 from django.utils.dateparse import parse_datetime
 from django.db.models import Max
-from modules.decorators.user_decorators import user_required
+
 
 class UserChatSet(APIView):
-    @user_required
+    permission_classes = [IsAuthenticated]
     def get(self, request: HttpRequest):
         user = request.user
         chats = models.Chat.objects.filter(members=user)
@@ -28,9 +28,8 @@ class UserChatSet(APIView):
 
 
 class ChatMessageSet(APIView):
-    @user_required
+    permission_classes = [IsAuthenticated]
     def get(self, request: HttpRequest, slug):
-        user = get_user_by_request(request)
         if not models.Chat.objects.filter(slug=slug).exists():
             return Response({"status": False, "message": "Chat undefined"})
         chat = models.Chat.objects.get(slug=slug)
