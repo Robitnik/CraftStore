@@ -150,7 +150,6 @@ class Category(models.Model):
         fields = fields or ['name', 'slug', 'id']
         data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
         data = dict(data.data)
-        data["is_super"] = True if not self.parent_category else False
         return data
 
     def __str__(self):
