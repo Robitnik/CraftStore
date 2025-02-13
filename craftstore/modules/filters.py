@@ -1,20 +1,25 @@
 from django.db.models import Q
 
+def object_filter(request, object, order=None, blockeys=None, manytomany=None):
+    if blockeys is None:
+        blockeys = ["order", "limit", "page"]
+    if manytomany is None:
+        manytomany = []
 
-def object_filter(request, object, order=None, blockeys=["order", "limit", "page"], manytomany=[]):
     if not order and request.GET.get('order'):
         order = request.GET.get('order')
+
     params_list = []
-    model_fields = [field.name for field in object.model._meta.get_fields()]
+    model_fields = {field.name for field in object.model._meta.get_fields()}
 
     for key, value in request.GET.items():
-        if key in model_fields:
-            if key in blockeys:
-                continue
-            if key == "id":
-                params_list.append(["pk", value])
-            elif key == "mal_id":
-                params_list.append(["mall_id", value])
+        if key in blockeys:
+            continue
+        if key in model_fields or "__" in key:
+            if value.lower() == "true":
+                params_list.append([key, True])
+            elif value.lower() == "false":
+                params_list.append([key, False])
             else:
                 if "," in value:
                     values = value.split(",")
@@ -22,7 +27,7 @@ def object_filter(request, object, order=None, blockeys=["order", "limit", "page
                         params_list.append([key, new_value])
                 elif "-" in value:
                     values = value.split("-")
-                    if len(values) > 1:
+                    if len(values) == 2 and values[0].isdigit() and values[1].isdigit():
                         for new_value in range(int(values[0]), int(values[1]) + 1):
                             params_list.append([key, new_value])
                 else:
@@ -30,15 +35,20 @@ def object_filter(request, object, order=None, blockeys=["order", "limit", "page
 
     filters = Q()
 
-    for i in params_list:
-        field_name = i[0]
-        field_value = i[1]
-        if field_name in manytomany:
+    for field_name, field_value in params_list:
+        if "__" in field_name:
+            filters |= Q(**{field_name: field_value})
+        elif field_name in manytomany:
             filters |= Q(**{f"{field_name}__pk__in": [field_value]})
         else:
             filters |= Q(**{f"{field_name}__icontains": field_value})
+
+    object = object.filter(filters)
+
     if order:
-        object = object.filter(filters).order_by(order)
-    else:
-        object = object.filter(filters)
+        object = object.order_by(order)
+
+    if manytomany:
+        object = object.distinct()
+
     return object

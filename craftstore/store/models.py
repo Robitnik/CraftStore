@@ -1,8 +1,6 @@
 from django.db import models
-from django.utils.text import slugify
-from transliterate import translit
 from modules.serializers import get_serializer_for_model
-
+from modules.db.text import slugify
 
 class Store(models.Model):
     name = models.CharField(max_length=100, blank=True)
@@ -31,7 +29,7 @@ class Store(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(translit(self.name, reversed=True))
+            self.slug = slugify(self.name)
         super().save(*args, **kwargs)
     
 
@@ -56,7 +54,7 @@ class Goods(models.Model):
     date_updated = models.DateTimeField(auto_now=True, blank=True)
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(translit(self.title, reversed=True))
+            self.slug = slugify(self.title)
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -136,19 +134,27 @@ class Category(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(translit(self.name, reversed=True))
+            self.slug = slugify(self.name)
         super().save(*args, **kwargs)
 
     def as_dict(self, fields=None):
         fields = fields or ['name', 'slug', 'id', 'description', 'date_published', 'date_updated']
         data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
-        return data.data
+        data = dict(data.data)
+        data["is_super"] = True if not self.parent_category else False
+        if self.parent_category:
+            data["parent_category"] = self.parent_category.as_mini_dict()
+        return data
 
     def as_mini_dict(self, fields=None):
         fields = fields or ['name', 'slug', 'id']
         data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
-        return data.data
+        data = dict(data.data)
+        data["is_super"] = True if not self.parent_category else False
+        return data
 
+    def __str__(self):
+        return f"{self.name} - {self.slug}"
 
 class UserSocialMedia(models.Model):
     social = models.ForeignKey("SocialMedia", related_name="user_social_media", on_delete=models.CASCADE, blank=True)

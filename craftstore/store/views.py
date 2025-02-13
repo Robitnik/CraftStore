@@ -104,3 +104,12 @@ class GoodsViewSet(APIView):
             return Response({"status": False, "code": 404}, status=404)
         goods = models.Goods.objects.get(slug=goods_slug)
         return Response(goods.as_dict())
+
+
+class CategoryViewSet(APIView):
+    def get(self, request: HttpRequest, *args, **kwargs):
+        queryset = object_filter(request=request, object=models.Category.objects.all())
+        data = {"count": queryset.count(), "results": []}
+        for category in queryset:
+            data["results"].append(category.as_dict())
+        return Response(data, status=status.HTTP_200_OK)

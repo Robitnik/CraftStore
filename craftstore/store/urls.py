@@ -10,4 +10,5 @@ urlpatterns = [
     path("api/rest/store/filter", views.StoreViewSet.as_view(), name="store_filter_url"),
     path("api/rest/store/get/<str:slug>", views.StoreGoodSet.as_view(), name="store_filter_url"),
     path("api/rest/store/<str:store_slug>/goods/<str:goods_slug>", views.StoreGoodSet.as_view(), name="store_filter_url"),
+    path("api/rest/categories/filter", views.CategoryViewSet.as_view(), name="categories_filter_url"),
 ]
