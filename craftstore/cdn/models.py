@@ -44,7 +44,7 @@ class Image(models.Model):
         return f"{cdn_domain}/{self.url}"
 
     def get_absolute_url(self):
-        return reverse("_detail", kwargs={"pk": self.pk})
+        return self.build_img_url()
 
     def as_dict(self, fields=None):
         fields = fields or ['id', 'url', 'create_at', 'slug']

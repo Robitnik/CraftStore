@@ -9,6 +9,9 @@ services:
       - ./craftstore:/app/craftstore
     restart: always
 
+
+
+# poetry run python manage.py makemigrations&&poetry run python manage.py migrate&&
 #  db:
 # 
 #    image: postgres:15-alpine

@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils.text import slugify
+from transliterate import translit
 from modules.serializers import get_serializer_for_model
 
 
@@ -16,19 +17,21 @@ class Store(models.Model):
 
 
     def as_dict(self, fields=None):
-        fields = fields or ['id','slug','name','avatar','describe']
+        fields = fields or ['id','slug','name','describe']
         data = get_serializer_for_model(queryset=self, model=Store, fields=fields, many=False)
-        data.data["avatar"] = self.avatar.get_absolute_url() if self.avatar else None
-        return data.data
+        data = dict(data.data)
+        data["avatar"] = self.avatar.build_img_url() if self.avatar else None
+        return data
     def as_mini_dict(self, fields=None):
-        fields = fields or ['id','slug','name','avatar']
+        fields = fields or ['id','slug','name']
         data = get_serializer_for_model(queryset=self, model=Store, fields=fields, many=False)
-        data.data["avatar"] = self.avatar.get_absolute_url() if self.avatar else None
-        return data.data
+        data = dict(data.data)
+        data["avatar"] = self.avatar.build_img_url() if self.avatar else None
+        return data
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.name)
+            self.slug = slugify(translit(self.name, reversed=True))
         super().save(*args, **kwargs)
     
 
@@ -53,7 +56,7 @@ class Goods(models.Model):
     date_updated = models.DateTimeField(auto_now=True, blank=True)
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.title)
+            self.slug = slugify(translit(self.title, reversed=True))
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -126,13 +129,14 @@ class CharacteristicNameType(models.Model):
 class Category(models.Model):
     name = models.CharField(max_length=500, blank=True)
     slug = models.SlugField(max_length=100, blank=True)
+    parent_category = models.ForeignKey("Category", related_name="sub_categories", on_delete=models.CASCADE, blank=True, null=True)
     description = models.TextField(blank=True)
     date_published = models.DateTimeField(auto_now_add=True, blank=True)
     date_updated = models.DateTimeField(auto_now=True, blank=True)
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.name)
+            self.slug = slugify(translit(self.name, reversed=True))
         super().save(*args, **kwargs)
 
     def as_dict(self, fields=None):

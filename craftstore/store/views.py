@@ -32,17 +32,13 @@ class GoodsViewFilter(APIView):
 
 class UserStore(APIView):
     permission_classes = [IsAuthenticated]
-
     def get(self, request: HttpRequest, *args, **kwargs):
         user = request.user
-        model = models.Goods
-        queryset = models.Goods.objects.filter(owner=user)
-        serializer = serializers.get_serializer_for_model(
-            queryset=queryset,
-            model=model,
-            fields=['name', 'avatar', 'slug']
-        )
-        data = serializer.data
+        queryset = models.Store.objects.filter(owner=user)
+        if not queryset.exists():
+            return Response({"status": False, "code": 404}, status=404)
+        store = queryset.first()
+        data = store.as_dict()
         return Response(data, status=status.HTTP_200_OK)
 
 

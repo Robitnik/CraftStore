@@ -1,6 +1,6 @@
 from . import models
 from store import models as store_models
-from django.contrib.auth import authenticate, login as auth_login_user
+from django.contrib.auth import authenticate, login as auth_login_user, logout as auth_logout_user
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.request import HttpRequest
@@ -14,6 +14,8 @@ from rest_framework.permissions import IsAuthenticated
 
 
 class UserLogin(APIView):
+    authentication_classes = []
+    permission_classes = []
     def post(self, request):
         username = request.data.get('username')
         password = request.data.get('password')
@@ -34,7 +36,6 @@ class UserLogin(APIView):
                 "message": "Логін або пароль не співпадають",
                 "username": username,
             }, status=status.HTTP_400_BAD_REQUEST)
-
 
 
 class UserRegister(APIView):
@@ -265,4 +266,11 @@ class UserCartAPI(APIView):
             return Response({"status": True, "count":usergoods.count, "good_slug": good_slug})
         else:
             usergoods.delete()
+        return Response({"status": True})
+
+
+class UserLogout(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        auth_logout_user(request)
         return Response({"status": True})

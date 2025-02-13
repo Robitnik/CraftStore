@@ -16,13 +16,13 @@ class UserStore:
     def __init__(self, user: User) -> None:
         self.user = user
     def create_store(self, request: HttpRequest) -> dict:
+        if Store.objects.filter(owner=self.user).exists():
+            return {"status": False, "message": "Ви не можете створити білше 1 магазину", "code": 301}
         if request.GET.get("step") == "1":
-            if Store.objects.filter(owner=self.user).exists():
-                return {"status": False, "message": "Ви не можете створити білше 1 магазину", "code": 301}
             data = request.data
-            if not data.get("store_name"):
-                return {"status": False, "message": "Не отримано назву магазину", "code": 405}
-            slug = slugify(data.get("store_name"))
+            if not data.get("slug"):
+                return {"status": False, "message": "Не отримано ID", "code": 405}
+            slug = slugify(data.get("slug"))
             store = Store.objects.filter(slug__exact=slug)
             if store.exists():
                 return {"status": False, "message": "Магазин з такою назвою вже зареєстровано", "code": 301}
@@ -72,9 +72,10 @@ class StoreGood:
             return {"status": False, "code": 400}
         data = request.data
         good: Goods = create_object(data=data, model=Goods, fields=["title", "price", "description"])
-        poster = image_to_cloud(save_uploaded_file(request.FILES.GET("store_logo")), url=f"images/store/{self.store.slug}/goods/{good.slug}/{good.slug}_image") if request.FILES.GET("store_logo") else None
+        # TODO: Переписати логіку на отримання id картинки
+        #poster = image_to_cloud(save_uploaded_file(request.FILES.GET("store_logo")), url=f"images/store/{self.store.slug}/goods/{good.slug}/{good.slug}_image") if request.FILES.GET("store_logo") else None
         #gallery = [image_to_cloud(save_uploaded_file(request.FILES.GET("store_logo")), url=f"images/store/{self.store.slug}/goods/{good.slug}/{good.slug}_image") for img in data.get("gallery", [])]
-        good.poster = poster
+        # good.poster = poster
         good.store = self.store
         good.save()
         return {"status": True, "good": good.as_dict()}

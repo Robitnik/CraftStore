@@ -17,7 +17,7 @@ class ImageSet(APIView):
         uploaded_file = request.FILES.get("image")
         if not uploaded_file:
             return Response({"error": "Image file is required"}, status=400)
-        img = image_to_cloud(save_uploaded_file(uploaded_file), url=url)
+        img = image_to_cloud(save_uploaded_file(uploaded_file), url=url, author=request.user)
         data = img.as_mini_dict()
         data["status"] = True
         return Response(data)

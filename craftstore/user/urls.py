@@ -4,6 +4,7 @@ from . import views
 
 urlpatterns = [
     path("api/rest/user/login", views.UserLogin.as_view(), name="user_login_url"),
+    path("api/rest/user/logout", views.UserLogout.as_view(), name="user_logout_url"),
     path("api/rest/user/register", views.UserRegister.as_view(), name="user_register_url"),
     path("api/rest/user/edit", views.UserEdit.as_view(), name="user_edit_url"),
     path("api/rest/user/reset/password", views.UserResetPassword.as_view(), name="user_reset_password_url"),
