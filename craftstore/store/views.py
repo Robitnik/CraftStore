@@ -108,19 +108,19 @@ class GoodsViewSet(APIView):
 
 class CategoryViewSet(APIView):
     def get(self, request: HttpRequest, *args, **kwargs):
-        if request.GET.get("id"):
+        if request.GET.get("id") and isinstance(request.GET.get("id"), int):
             queryset = models.Category.objects.filter(pk=request.GET.get("id"))
         else:
             queryset = object_filter(request=request, object=models.Category.objects.all())
         data = {"count": queryset.count(), "results": []}
         if not queryset.exists():
             return Response({"status": False, "code": 404}, status=404)
-        if not request.GET.get("id") and queryset.count() == 1:
+        if queryset.count() == 1:
             category = queryset.first()
+            category_data = category.as_dict()
             if category.sub_categories and category.sub_categories.count() > 0:
-                category_data = category.as_dict()
                 category_data["sub_categories"] = [sub.as_mini_dict() for sub in category.sub_categories.all()]
-                data["results"] = [category_data]
+            data["results"] = [category_data]
             return Response(data)
         for category in queryset:
             data["results"].append(category.as_dict())

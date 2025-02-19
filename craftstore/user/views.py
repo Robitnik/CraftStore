@@ -11,6 +11,8 @@ from modules.html import render
 from django.middleware.csrf import get_token
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
+from cdn.models import Image
+
 
 
 class UserLogin(APIView):
@@ -112,17 +114,38 @@ class UserEdit(APIView):
         email_status, phone_status = False
         email = request.data.get("email")
         phone_number = request.data.get('phone_number')
+        username = request.data.get('username')
+        first_name = request.data.get('first_name')
+        last_name = request.data.get('last_name')
+        avatar_id = request.data.get('avatar_id')
         user = request.user
+        if username:
+            if models.User.objects.filter(username=username).exists():
+                return Response({"status": False, "message": "Користувач з таким логіном вже існує"})
         if email:
             email_status = validator.validate_email(email=email)
             if email_status:
+                if models.User.objects.filter(email=email).exists():
+                    return Response({"status": False, "message": "Користувач з таким email вже існує"})
                 user.email = email
         if phone_number:
             phone_status = validator.valite_phone_number(phone=phone_number)
             if phone_status:
+                if models.User.objects.filter(phone_number=phone_number).exists():
+                    return Response({"status": False, "message": "Користувач з таким номером телефону вже існує"})
                 user.phone_number = phone_number
+        if username:
+            user.username = username
+        if first_name:
+            user.first_name = first_name
+        if last_name:
+            user.last_name = last_name
+        if avatar_id:
+            img = Image.objects.filter(pk=avatar_id)
+            if img.exists():
+                user.avatar = Image.objects.get(pk=avatar_id)
         user.save()
-        return Response({"email_status": email_status, "phone_status": phone_status})
+        return Response({"status": True, "user": user.as_dict()})
 
 
 
