@@ -2,7 +2,6 @@ import re
 from unidecode import unidecode
 from transliterate import translit
 from django.utils.text import slugify as django_slugify
-
 SPECIAL_CHAR_MAP = {
     "&": "and",
     "@": "at",

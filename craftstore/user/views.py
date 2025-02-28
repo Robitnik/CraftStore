@@ -262,23 +262,23 @@ class UserCartAPI(APIView):
         return Response(data)
     def post(self, request: HttpRequest):
         user = request.user
-        good_slug = request.data.get("good_slug")
-        if not store_models.Goods.objects.filter(slug=good_slug).exists():
+        good_pk = request.data.get("good_id")
+        try:
+            good = store_models.Goods.objects.get(pk=good_pk)
+        except store_models.Goods.DoesNotExist:
             return Response({"status": False, "code": 404})
-        goods = store_models.Goods.objects.filter(slug=good_slug)
-        usergoods, created = models.UserGoods.objects.get_or_create(goods=goods, user_cart=user)
+        usergoods, created = models.UserGoods.objects.get_or_create(goods=good)
         if created:
-            user.cart.add(usergoods)
+            user.user_cart.add(usergoods)
             user.save()
-        else:
-            usergoods.count =+ 1
-        return Response({"status": True, "count":usergoods.count, "good_slug": good_slug})
+        return Response({"status": True, "count": user.cart.first().goods.count()})
+
     def delete(self, request: HttpRequest):
         user = request.user
-        good_slug = request.data.get("good_slug")
-        if not store_models.Goods.objects.filter(slug=good_slug).exists():
+        good_pk = request.data.get("good_id")
+        if not store_models.Goods.objects.filter(pk=good_pk).exists():
             return Response({"status": False, "code": 404})
-        goods = store_models.Goods.objects.filter(slug=good_slug)
+        goods = store_models.Goods.objects.filter(pk=good_pk)
         usergoods = models.UserGoods.objects.filter(goods=goods, user_cart=user)
         if not usergoods.exists():
             return Response({"status": False, "code": 400})
@@ -286,7 +286,7 @@ class UserCartAPI(APIView):
         if usergoods.count > 1:
             usergoods.count =- 1
             usergoods.save()
-            return Response({"status": True, "count":usergoods.count, "good_slug": good_slug})
+            return Response({"status": True, "count":usergoods.count})
         else:
             usergoods.delete()
         return Response({"status": True})

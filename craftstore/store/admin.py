@@ -3,7 +3,7 @@ from django.contrib import admin
 
 
 from .models import (
-    Store, Goods, Gallery, Characteristic, CharacteristicNameType, 
+    Store, Goods, Characteristic, CharacteristicNameType, 
     Category, UserSocialMedia, SocialMedia
 )
 
@@ -20,9 +20,6 @@ class GoodsAdmin(admin.ModelAdmin):
     ordering = ('-date_published',)
 
 
-class GalleryAdmin(admin.ModelAdmin):
-    list_display = ('id', 'img', 'date')
-    ordering = ('-date',)
 
 
 class CharacteristicAdmin(admin.ModelAdmin):
@@ -53,7 +50,6 @@ class SocialMediaAdmin(admin.ModelAdmin):
 
 admin.site.register(Store, StoreAdmin)
 admin.site.register(Goods, GoodsAdmin)
-admin.site.register(Gallery, GalleryAdmin)
 admin.site.register(Characteristic, CharacteristicAdmin)
 admin.site.register(CharacteristicNameType, CharacteristicNameTypeAdmin)
 admin.site.register(Category, CategoryAdmin)

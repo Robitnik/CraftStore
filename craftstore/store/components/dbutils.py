@@ -1,5 +1,5 @@
 from user.models import User
-from store.models import Store, Goods
+from store.models import Store, Goods, Category
 from cdn.models import Image
 from django.utils.text import slugify
 from django.http import HttpRequest
@@ -7,7 +7,6 @@ from modules.files import save_uploaded_file
 from cdn.utils import image_to_cloud
 from modules.mail import mail
 from modules.html import render
-from modules.serializers import create_object
 from user.models import MailCode
 
 
@@ -71,11 +70,24 @@ class StoreGood:
         if self.store.owner != self.user:
             return {"status": False, "code": 400}
         data = request.data
-        good: Goods = create_object(data=data, model=Goods, fields=["title", "price", "description"])
-        # TODO: Переписати логіку на отримання id картинки
-        #poster = image_to_cloud(save_uploaded_file(request.FILES.GET("store_logo")), url=f"images/store/{self.store.slug}/goods/{good.slug}/{good.slug}_image") if request.FILES.GET("store_logo") else None
-        #gallery = [image_to_cloud(save_uploaded_file(request.FILES.GET("store_logo")), url=f"images/store/{self.store.slug}/goods/{good.slug}/{good.slug}_image") for img in data.get("gallery", [])]
-        # good.poster = poster
+        good: Goods = Goods()
+        poster = Image.objects.get(pk=data.get("poster")) if data.get("poster") and Image.objects.filter(pk=data.get("poster")).exists() else None
+        gallery = (
+            [Image.objects.get(pk=pk) for pk in data.get("gallery")]
+            if data.get("gallery") and Image.objects.filter(pk__in=data.get("gallery")).exists()
+            else []
+        )
+        categories = [Category.objects.get(pk=pk) for pk in data.get("category")] if data.get("category") and Category.objects.filter(pk__in=data.get("category")).exists() else []
+        good.title = data.get("title")
+        good.price = data.get("price")
+        good.count = data.get("count")
+        good.description = data.get("description")
+        good.author = self.user
+        good.store = self.store
+        good.poster = poster
+        good.save()
+        good.gallery.set(gallery)
+        good.category.set(categories)
         good.store = self.store
         good.save()
         return {"status": True, "good": good.as_dict()}
@@ -83,22 +95,22 @@ class StoreGood:
         if self.store.owner != self.user:
             return {"status": False, "code": 400}
         data = request.data
-        slug = data.get("slug")
-        if not slug:
+        pk = data.get("id")
+        if not pk:
             return {"status": False,"code": 404, "massage":"good not found"}
-        if not Goods.objects.filter(slug=slug).exists():
+        if not Goods.objects.filter(pk=pk).exists():
             return {"status": False,"code": 404, "massage":"good not found"}
-        good = Goods.objects.get(slug=slug, store=self.store)
+        good = Goods.objects.get(pk=pk, store=self.store)
         good.delete()
         return {"status": True}
     def hide_good(self, request: HttpRequest) -> dict:
         data = request.data
-        slug = data.get("slug")
-        if not slug:
+        pk = data.get("id")
+        if not pk:
             return {"status": False,"code": 404, "massage":"good not found"}
-        if not Goods.objects.filter(slug=slug).exists():
+        if not Goods.objects.filter(pk=pk).exists():
             return {"status": False,"code": 404, "massage":"good not found"}
-        good = Goods.objects.get(slug=slug, store=self.store)
+        good = Goods.objects.get(pk=pk, store=self.store)
         if good.author != self.user and self.store.owner != self.user:
             return {"status": False, "code": 400}
         good.published = False
@@ -106,12 +118,12 @@ class StoreGood:
         return {"status": True, "good": good.as_dict()}
     def unhide_good(self, request: HttpRequest) -> dict:
         data = request.data
-        slug = data.get("slug")
-        if not slug:
+        pk = data.get("id")
+        if not pk:
             return {"status": False,"code": 404, "massage":"good not found"}
-        if not Goods.objects.filter(slug=slug).exists():
+        if not Goods.objects.filter(pk=pk).exists():
             return {"status": False,"code": 404, "massage":"good not found"}
-        good = Goods.objects.get(slug=slug, store=self.store)
+        good = Goods.objects.get(pk=pk, store=self.store)
         if good.author != self.user and self.store.owner != self.user:
             return {"status": False, "code": 400}
         good.published = True
@@ -119,7 +131,7 @@ class StoreGood:
         return {"status": True, "good": good.as_dict()}
     def update_good(self, request: HttpRequest) -> dict:
         data = request.data
-        slug = data.get("slug")
+        pk = data.get("id")
         return {"status": False}
 
 

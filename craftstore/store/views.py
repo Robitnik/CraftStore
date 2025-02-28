@@ -24,7 +24,7 @@ class GoodsViewFilter(APIView):
         queryset = object_filter(request=request, object=model.objects.all())
         data = []
         for good in queryset:
-            data.append(good.as_mini_dict(fields=["poster", "slug", "title", "price", "views_count", "date_published", "store"]))
+            data.append(good.as_mini_dict(fields=["id", "title", "slug", "price", "views_count", "description", "date_published", "date_updated"]))
         return Response(data, status=status.HTTP_200_OK)
 
 
@@ -69,29 +69,29 @@ class StoreViewSet(APIView):
 
 class StoreGoodSet(APIView):
     permission_classes = [IsAuthenticated]
-    def get(self, request: HttpRequest, *args, **kwargs):
+    def get(self, request: HttpRequest):
         # товари магазину
         return Response({})
-    def post(self, request: HttpRequest, *args, **kwargs):
+    def post(self, request: HttpRequest):
         user = request.user
         store = user.store
         good = dbutils.StoreGood(store=store, user=user)
         if "hide" in request.GET:
             data = good.hide_good(request=request)
-        if "unhide" in request.GET:
+        elif "unhide" in request.GET:
             data = good.unhide_good(request=request)
-        if "create" in request.GET:
-            data =good.add_good(request=request)
+        elif "create" in request.GET:
+            data = good.add_good(request=request)
         else:
             data = {"status": False, "code": 404}
         return Response(data)
 
-    def put(self, request: HttpRequest, *args, **kwargs):
+    def put(self, request: HttpRequest):
         user = request.user
         store = user.store
         good = dbutils.StoreGood(store=store, user=user)
         return Response(good.update_good(request=request))
-    def delete(self, request: HttpRequest, *args, **kwargs):
+    def delete(self, request: HttpRequest):
         user = request.user
         store = user.store
         good = dbutils.StoreGood(store=store, user=user)

@@ -47,7 +47,7 @@ class Image(models.Model):
         return self.build_img_url()
 
     def as_dict(self, fields=None):
-        fields = fields or ['id', 'url', 'create_at', 'slug']
+        fields = fields or ['id', 'create_at', 'slug']
         data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
         data = data.data
         data['url'] = self.build_img_url()
@@ -55,7 +55,7 @@ class Image(models.Model):
         return data
 
     def as_mini_dict(self, fields=None):
-        fields = fields or ['id', 'url', 'slug']
+        fields = fields or ['id', 'slug']
         data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
         data = data.data
         data['url'] = self.build_img_url()

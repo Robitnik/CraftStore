@@ -1,13 +1,13 @@
 from django.db.models import Q
 
+
 def object_filter(request, object, order=None, blockeys=None, manytomany=None):
-    if blockeys is None:
+    if not blockeys:
         blockeys = ["order", "limit", "page"]
-    if manytomany is None:
+    if not manytomany:
         manytomany = []
 
-    if not order and request.GET.get('order'):
-        order = request.GET.get('order')
+    order = request.GET.get("order", order)
 
     params_list = []
     model_fields = {field.name for field in object.model._meta.get_fields()}
