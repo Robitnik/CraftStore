@@ -260,6 +260,8 @@ class UserCartAPI(APIView):
         for goods in user.cart.all():
             data["goods"].append(goods.goods.as_mini_dict(fields=["poster", "slug", "title", "price", "views_count", "date_published", "store"]))
         return Response(data)
+
+
     def post(self, request: HttpRequest):
         user = request.user
         good_pk = request.data.get("good_id")
@@ -267,11 +269,14 @@ class UserCartAPI(APIView):
             good = store_models.Goods.objects.get(pk=good_pk)
         except store_models.Goods.DoesNotExist:
             return Response({"status": False, "code": 404})
-        usergoods, created = models.UserGoods.objects.get_or_create(goods=good)
-        if created:
-            user.user_cart.add(usergoods)
+        if not user.cart:
+            user.cart = models.UserGoods.objects.create(goods=good)
             user.save()
-        return Response({"status": True, "count": user.cart.first().goods.count()})
+        else:
+            user.cart.goods = good
+            user.cart.save()
+        return Response({"status": True, "count": user.cart.goods.count()})
+
 
     def delete(self, request: HttpRequest):
         user = request.user
@@ -293,7 +298,10 @@ class UserCartAPI(APIView):
 
 
 class UserLogout(APIView):
-    permission_classes = [IsAuthenticated]
+    authentication_classes = []
+    permission_classes = []
     def post(self, request):
-        auth_logout_user(request)
-        return Response({"status": True})
+        if request.user.is_authenticated:
+            auth_logout_user(request)
+            return Response({"status": True})
+        return Response({"status": False, "message": "User not authenticated"})

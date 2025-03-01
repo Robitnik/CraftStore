@@ -8,7 +8,7 @@ class Store(models.Model):
     avatar = models.OneToOneField("cdn.Image", on_delete=models.SET_NULL, related_name="store_image", blank=True, null=True)
     social_links = models.ManyToManyField("UserSocialMedia", related_name="store", blank=True)
     describe = models.TextField(blank=True)
-    owner = models.OneToOneField("user.User", related_name="store", on_delete=models.CASCADE, null=True)
+    owner = models.OneToOneField("user.User", related_name="store", on_delete=models.SET_NULL, null=True)
 
     def __str__(self) -> str:
         return f"{self.name}"
@@ -36,7 +36,7 @@ class Store(models.Model):
 
 
 class Goods(models.Model):
-    store = models.ForeignKey("Store", related_name="goods", on_delete=models.CASCADE)
+    store = models.ForeignKey("Store", related_name="goods", on_delete=models.SET_NULL, null=True, blank=True)
     slug = models.CharField(max_length=100, blank=True, null=True)
     title = models.CharField(max_length=200, blank=True,)
     price = models.DecimalField(max_digits=10, blank=True, decimal_places=2)
@@ -80,7 +80,7 @@ class Goods(models.Model):
 
 
 class Characteristic(models.Model):
-    name_type = models.ForeignKey("CharacteristicNameType", on_delete=models.CASCADE, related_name="characteristic")
+    name_type = models.ForeignKey("CharacteristicNameType", on_delete=models.SET_NULL, null=True, blank=True, related_name="characteristic")
     value = models.CharField(max_length=1000, blank=True)
 
     def as_dict(self, fields=None):
@@ -111,7 +111,7 @@ class CharacteristicNameType(models.Model):
 class Category(models.Model):
     name = models.CharField(max_length=500, blank=True)
     slug = models.SlugField(max_length=100, blank=True)
-    parent_category = models.ForeignKey("Category", related_name="sub_categories", on_delete=models.CASCADE, blank=True, null=True)
+    parent_category = models.ForeignKey("Category", related_name="sub_categories", on_delete=models.SET_NULL, blank=True, null=True)
     description = models.TextField(blank=True)
     date_published = models.DateTimeField(auto_now_add=True, blank=True)
     date_updated = models.DateTimeField(auto_now=True, blank=True)
@@ -140,7 +140,7 @@ class Category(models.Model):
         return f"{self.name} - {self.slug}"
 
 class UserSocialMedia(models.Model):
-    social = models.ForeignKey("SocialMedia", related_name="user_social_media", on_delete=models.CASCADE, blank=True)
+    social = models.ForeignKey("SocialMedia", related_name="user_social_media", on_delete=models.SET_NULL, blank=True, null=True)
     link = models.CharField(max_length=200, blank=True)
 
     def as_dict(self, fields=None):

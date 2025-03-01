@@ -35,7 +35,7 @@ class Chat(models.Model):
 
 class Massage(models.Model):
     massege = models.TextField()
-    sender = models.ForeignKey("user.User", related_name="chat_masseges", on_delete=models.CASCADE)
+    sender = models.ForeignKey("user.User", related_name="chat_masseges", on_delete=models.SET_NULL, blank=True, null=True)
     read = models.BooleanField(default=False)
     send_date = models.DateTimeField(auto_now_add=True)
     edit_date = models.DateTimeField(auto_now=True)

@@ -14,9 +14,9 @@ class User(AbstractUser):
     address = models.CharField(max_length=1000, blank=True)
     phone_number = models.CharField(max_length=1000, blank=True)
     user_gender = models.CharField(max_length=1000, blank=True)
-    favorites = models.ManyToManyField("UserGoods", related_name="user_favorites", blank=True)
-    views_history = models.ManyToManyField("UserGoods", related_name="user_views_history", blank=True)
-    cart = models.ManyToManyField("UserGoods", related_name="user_cart", blank=True)
+    favorites = models.OneToOneField("UserGoods", related_name="user_favorites", on_delete=models.SET_NULL,  blank=True, null=True)
+    views_history = models.OneToOneField("UserGoods", related_name="user_views_history", on_delete=models.SET_NULL, blank=True, null=True)
+    cart = models.OneToOneField("UserGoods", related_name="user_cart", on_delete=models.SET_NULL, blank=True, null=True)
     slug = models.SlugField(blank=True)
 
     def is_online(self):
@@ -70,9 +70,9 @@ class Group(AbstractGroup):
         data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
         return data.data
 
+
 class UserGoods(models.Model):
-    goods = models.ForeignKey("store.Goods", on_delete=models.CASCADE)
-    count = models.IntegerField(default=1)
+    goods = models.ForeignKey("store.Goods", on_delete=models.SET_NULL, blank=True, null=True)
     date = models.DateTimeField(auto_now_add=True, blank=True)
 
     def as_dict(self, fields=None):
@@ -106,7 +106,7 @@ class ValidatedEmails(models.Model):
 
 class MailCode(models.Model):
     code = models.IntegerField(blank=True, null=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True)
     date_pub = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
 

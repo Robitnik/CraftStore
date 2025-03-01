@@ -19,7 +19,8 @@ SESSION_COOKIE_SECURE = True
 CORS_ALLOWED_ORIGINS = [
    "https://lv6xwh7d-3000.euw.devtunnels.ms",
    "http://localhost",
-   "http://127.0.0.1"
+   "http://127.0.0.1",
+   "https://fe93-185-175-238-137.ngrok-free.app",
 ]
 CORS_ALLOW_HEADERS = (
     "accept",

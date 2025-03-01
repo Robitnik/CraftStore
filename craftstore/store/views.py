@@ -11,6 +11,8 @@ from .components import dbutils
 
 
 class Test(APIView):
+    authentication_classes = []
+    permission_classes = []
     def get(self, request: HttpRequest):
         goods1 = models.Goods.objects.get(pk=1)
         return Response(goods1.as_dict(fields=["title"]))
@@ -18,7 +20,10 @@ class Test(APIView):
 def main(request:HttpRequest):
     return  HttpResponse("Craftstore")
 
+
 class GoodsViewFilter(APIView):
+    authentication_classes = []
+    permission_classes = []
     def get(self, request, *args, **kwargs):
         model = models.Goods
         queryset = object_filter(request=request, object=model.objects.all())
@@ -55,6 +60,8 @@ class UserStore(APIView):
 
 
 class StoreViewSet(APIView):
+    authentication_classes = []
+    permission_classes = []
     def get(self, request: HttpRequest, *args, **kwargs):
         model = models.Store
         queryset = object_filter(request=request, object=models.Store.objects.all())
@@ -99,6 +106,8 @@ class StoreGoodSet(APIView):
 
 
 class GoodsViewSet(APIView):
+    authentication_classes = []
+    permission_classes = []
     def get(self, request: HttpRequest, store_slug, goods_slug):
         if not  models.Goods.objects.filter(slug=goods_slug).exists():
             return Response({"status": False, "code": 404}, status=404)
@@ -107,6 +116,8 @@ class GoodsViewSet(APIView):
 
 
 class CategoryViewSet(APIView):
+    authentication_classes = []
+    permission_classes = []
     def get(self, request: HttpRequest, *args, **kwargs):
         if request.GET.get("id") and isinstance(request.GET.get("id"), int):
             queryset = models.Category.objects.filter(pk=request.GET.get("id"))
