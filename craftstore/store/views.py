@@ -26,7 +26,7 @@ class GoodsViewFilter(APIView):
     permission_classes = []
     def get(self, request, *args, **kwargs):
         model = models.Goods
-        queryset = object_filter(request=request, object=model.objects.all())
+        queryset = object_filter(request=request, object=model.objects.all(), order=request.GET.get("order_by", "-date_published"))
         data = []
         for good in queryset:
             data.append(good.as_mini_dict(fields=["id", "title", "slug", "price", "views_count", "description", "date_published", "date_updated"]))

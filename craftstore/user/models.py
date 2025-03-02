@@ -7,18 +7,13 @@ from django.contrib.auth.hashers import is_password_usable
 from modules.serializers import get_serializer_for_model
 
 
-
 class User(AbstractUser):
-    avatar = models.ForeignKey("cdn.Image", on_delete=models.SET_NULL, related_name="image", blank=True, null=True)
+    avatar = models.OneToOneField("cdn.Image", on_delete=models.SET_NULL, related_name="image", blank=True, null=True)
     groups = models.ManyToManyField('user.Group', related_name='users', blank=True)
     address = models.CharField(max_length=1000, blank=True)
     phone_number = models.CharField(max_length=1000, blank=True)
     user_gender = models.CharField(max_length=1000, blank=True)
-    favorites = models.OneToOneField("UserGoods", related_name="user_favorites", on_delete=models.SET_NULL,  blank=True, null=True)
-    views_history = models.OneToOneField("UserGoods", related_name="user_views_history", on_delete=models.SET_NULL, blank=True, null=True)
-    cart = models.OneToOneField("UserGoods", related_name="user_cart", on_delete=models.SET_NULL, blank=True, null=True)
     slug = models.SlugField(blank=True)
-
     def is_online(self):
         return True
 
@@ -45,9 +40,9 @@ class User(AbstractUser):
         data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
         data.data['avatar'] = self.get_avatar_url()
         data.data['groups'] = [group.as_mini_dict() for group in self.groups.all()]
-        data.data['favorites'] = [fav.as_dict() for fav in self.favorites.all()]
-        data.data['views_history'] = [view.as_dict() for view in self.views_history.all()]
-        data.data['cart'] = [item.as_dict() for item in self.cart.all()]
+        data.data['favorites'] = [fav.as_dict() for fav in self.favorite_items.all()]
+        data.data['views_history'] = [view.as_dict() for view in self.history_items.all()]
+        data.data['cart'] = [item.as_dict() for item in self.cart_items.all()]
         return data.data
 
     def as_mini_dict(self, fields=None):
@@ -55,6 +50,43 @@ class User(AbstractUser):
         data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
         data.data['avatar'] = self.get_avatar_url()
         return data.data
+
+
+class UserCart(models.Model):
+    user = models.ForeignKey("User", related_name="cart", on_delete=models.CASCADE)
+    goods = models.ForeignKey("store.Goods", on_delete=models.SET_NULL, blank=True, null=True)
+    date_added = models.DateTimeField(auto_now_add=True)
+
+    def as_dict(self, fields=None):
+        return {"date": self.date_added, "goods": self.goods.as_dict(fields)}
+
+    def as_mini_dict(self, fields=None):
+        return {"date": self.date_added, "goods": self.goods.as_mini_dict(fields)}
+
+
+class UserFavorite(models.Model):
+    user = models.ForeignKey("User", related_name="favorites", on_delete=models.CASCADE)
+    goods = models.ForeignKey("store.Goods", on_delete=models.SET_NULL, blank=True, null=True)
+    date_added = models.DateTimeField(auto_now_add=True)
+
+    def as_dict(self, fields=None):
+        return {"date": self.date_added, "goods": self.goods.as_dict(fields)}
+
+    def as_mini_dict(self, fields=None):
+        return {"date": self.date_added, "goods": self.goods.as_mini_dict(fields)}
+
+
+class UserGoodHistory(models.Model):
+    user = models.ForeignKey("User", related_name="goods_history", on_delete=models.CASCADE)
+    goods = models.ForeignKey("store.Goods", on_delete=models.SET_NULL, blank=True, null=True)
+    date_added = models.DateTimeField(auto_now_add=True)
+
+    def as_dict(self, fields=None):
+        return {"date": self.date_added, "goods": self.goods.as_dict(fields)}
+
+    def as_mini_dict(self, fields=None):
+        return {"date": self.date_added, "goods": self.goods.as_mini_dict(fields)}
+
 
 
 class Group(AbstractGroup):
@@ -70,16 +102,6 @@ class Group(AbstractGroup):
         data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
         return data.data
 
-
-class UserGoods(models.Model):
-    goods = models.ForeignKey("store.Goods", on_delete=models.SET_NULL, blank=True, null=True)
-    date = models.DateTimeField(auto_now_add=True, blank=True)
-
-    def as_dict(self, fields=None):
-        return {"date": self.date, "goods": self.goods.as_dict(fields)}
-
-    def as_mini_dict(self, fields=None):
-        return {"date": self.date, "goods": self.goods.as_dict(fields)}
 
 
 class ValidatedEmails(models.Model):

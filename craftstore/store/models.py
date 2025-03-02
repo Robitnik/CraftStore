@@ -80,7 +80,7 @@ class Goods(models.Model):
 
 
 class Characteristic(models.Model):
-    name_type = models.ForeignKey("CharacteristicNameType", on_delete=models.SET_NULL, null=True, blank=True, related_name="characteristic")
+    name_type = models.OneToOneField("CharacteristicNameType", on_delete=models.SET_NULL, null=True, blank=True, related_name="characteristic")
     value = models.CharField(max_length=1000, blank=True)
 
     def as_dict(self, fields=None):
@@ -140,7 +140,7 @@ class Category(models.Model):
         return f"{self.name} - {self.slug}"
 
 class UserSocialMedia(models.Model):
-    social = models.ForeignKey("SocialMedia", related_name="user_social_media", on_delete=models.SET_NULL, blank=True, null=True)
+    social = models.OneToOneField("SocialMedia", related_name="user_social_media", on_delete=models.SET_NULL, blank=True, null=True)
     link = models.CharField(max_length=200, blank=True)
 
     def as_dict(self, fields=None):

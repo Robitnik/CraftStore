@@ -15,6 +15,7 @@ ALLOWED_HOSTS = [
 CSRF_TRUSTED_ORIGINS = [
     "https://lv6xwh7d-3000.euw.devtunnels.ms",
     "http://localhost",
+    "http://localhost:3000",
     "http://127.0.0.1"
 ]
 
@@ -28,6 +29,7 @@ INSTALLED_APPS = [
     'daphne',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework.authtoken',
     'channels',
     'corsheaders',
     'cdn',

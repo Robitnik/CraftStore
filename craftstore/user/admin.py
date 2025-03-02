@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils.translation import gettext_lazy as _
-from .models import User, Group, UserGoods, ValidatedEmails, MailCode
+from .models import User, Group, ValidatedEmails, MailCode
 
 
 @admin.register(User)
@@ -30,12 +30,6 @@ class GroupAdmin(admin.ModelAdmin):
     search_fields = ('name',)
 
 
-class UserGoodsAdmin(admin.ModelAdmin):
-    list_display = ('id', 'goods', 'date')
-    search_fields = ('goods__title',)
-    ordering = ('-date',)
-
-
 class ValidatedEmailsAdmin(admin.ModelAdmin):
     list_display = ('id', 'email', 'status', 'date', 'code')
     search_fields = ('email', 'code')
@@ -50,6 +44,5 @@ class MailCodeAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Group, GroupAdmin)
-admin.site.register(UserGoods, UserGoodsAdmin)
 admin.site.register(ValidatedEmails, ValidatedEmailsAdmin)
 admin.site.register(MailCode, MailCodeAdmin)

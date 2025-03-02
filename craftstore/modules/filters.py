@@ -7,7 +7,7 @@ def object_filter(request, object, order=None, blockeys=None, manytomany=None):
     if not manytomany:
         manytomany = []
 
-    order = request.GET.get("order", order)
+    order = request.GET.get("order_by", order)
 
     params_list = []
     model_fields = {field.name for field in object.model._meta.get_fields()}

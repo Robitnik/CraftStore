@@ -8,29 +8,29 @@ from modules.mail import mail
 from modules.validators import validator
 from modules.serializers import get_serializer_for_model
 from modules.html import render
-from django.middleware.csrf import get_token
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from cdn.models import Image
+from rest_framework.authtoken.models import Token
+from django.middleware.csrf import get_token
 
 
 
 class UserLogin(APIView):
     authentication_classes = []
     permission_classes = []
+
     def post(self, request):
         username = request.data.get('username')
         password = request.data.get('password')
         user = authenticate(request, username=username, password=password)
         if user:
-            auth_login_user(request, user)
-            session_key = request.session.session_key
-            csrf_token = get_token(request)
+            token, created = Token.objects.get_or_create(user=user)
             return Response({
                 "status": True,
                 "id": user.pk,
-                "sessionid": session_key,
-                "csrftoken": csrf_token,
+                "token": token.key,
+                "csrfToken": get_token(request),
             })
         else:
             return Response({
@@ -213,88 +213,112 @@ class User(APIView):
 
 class UserFavoritesAPI(APIView):
     permission_classes = [IsAuthenticated]
+
     def get(self, request: HttpRequest):
         user = request.user
-        data = {"count": user.favorites.count(),"goods":[]}
-        for goods in user.favorites.all():
-            data["goods"].append(goods.goods.as_mini_dict(fields=["poster", "slug", "title", "price", "views_count", "date_published", "store"]))
+        favorites = user.favorites.all()
+        data = {
+            "count": favorites.count(),
+            "goods": [
+                fav.goods.as_mini_dict(
+                    fields=["poster", "slug", "title", "price", "views_count", "date_published", "store"]
+                )
+                for fav in favorites
+            ]
+        }
         return Response(data)
+
     def post(self, request: HttpRequest):
         user = request.user
         good_slug = request.data.get("good_slug")
-        if not store_models.Goods.objects.filter(slug=good_slug).exists():
+        try:
+            goods = store_models.Goods.objects.get(slug=good_slug)
+        except store_models.Goods.DoesNotExist:
             return Response({"status": False, "code": 404})
-        goods = store_models.Goods.objects.filter(slug=good_slug)
-        usergoods = models.UserGoods.objects.get_or_create(goods=goods, user_favorites=user)
-        user.favorites.add(usergoods)
-        user.save()
+        
+        # Створюємо запис улюбленого товару або повертаємо існуючий
+        favorite, created = models.UserFavorite.objects.get_or_create(user=user, goods=goods)
         return Response({"status": True})
+
     def delete(self, request: HttpRequest):
         user = request.user
         good_slug = request.data.get("good_slug")
-        if not store_models.Goods.objects.filter(slug=good_slug).exists():
+        try:
+            goods = store_models.Goods.objects.get(slug=good_slug)
+        except store_models.Goods.DoesNotExist:
             return Response({"status": False, "code": 404})
-        goods = store_models.Goods.objects.filter(slug=good_slug)
-        usergoods = models.UserGoods.objects.filter(goods=goods, user_favorites=user)
-        if not usergoods.exists():
+        
+        favorite_qs = models.UserFavorite.objects.filter(user=user, goods=goods)
+        if not favorite_qs.exists():
             return Response({"status": False, "code": 400})
-        usergoods.first().delete
+        favorite_qs.first().delete()  # Викликаємо метод delete()
         return Response({"status": True})
 
 
 class UserHistoryAPI(APIView):
     permission_classes = [IsAuthenticated]
+
     def get(self, request: HttpRequest):
         user = request.user
-        data = {"count": user.user_views_history.count(),"goods":[]}
-        for goods in user.user_views_history.all():
-            data["goods"].append(goods.goods.as_mini_dict(fields=["poster", "slug", "title", "price", "views_count", "date_published", "store"]))
+        history_items = user.goods_history.all()
+        data = {
+            "count": history_items.count(),
+            "goods": [
+                item.goods.as_mini_dict(
+                    fields=["poster", "slug", "title", "price", "views_count", "date_published", "store"]
+                )
+                for item in history_items
+            ]
+        }
         return Response(data)
 
 
 class UserCartAPI(APIView):
     permission_classes = [IsAuthenticated]
+
     def get(self, request: HttpRequest):
         user = request.user
-        data = {"count": user.cart.count(),"goods":[]}
-        for goods in user.cart.all():
-            data["goods"].append(goods.goods.as_mini_dict(fields=["poster", "slug", "title", "price", "views_count", "date_published", "store"]))
+        cart_items = user.cart.all()
+        data = {
+            "count": cart_items.count(),
+            "goods": [
+                item.goods.as_mini_dict(
+                    fields=["poster", "slug", "title", "price", "views_count", "date_published", "store"]
+                )
+                for item in cart_items
+            ]
+        }
         return Response(data)
-
 
     def post(self, request: HttpRequest):
         user = request.user
         good_pk = request.data.get("good_id")
         try:
-            good = store_models.Goods.objects.get(pk=good_pk)
+            goods = store_models.Goods.objects.get(pk=good_pk)
         except store_models.Goods.DoesNotExist:
             return Response({"status": False, "code": 404})
-        if not user.cart:
-            user.cart = models.UserGoods.objects.create(goods=good)
-            user.save()
-        else:
-            user.cart.goods = good
-            user.cart.save()
-        return Response({"status": True, "count": user.cart.goods.count()})
-
+        
+        # Додаємо новий запис для товару в кошику користувача
+        models.UserCart.objects.create(user=user, goods=goods)
+        count = models.UserCart.objects.filter(user=user).count()
+        return Response({"status": True, "count": count})
 
     def delete(self, request: HttpRequest):
         user = request.user
         good_pk = request.data.get("good_id")
-        if not store_models.Goods.objects.filter(pk=good_pk).exists():
+        try:
+            goods = store_models.Goods.objects.get(pk=good_pk)
+        except store_models.Goods.DoesNotExist:
             return Response({"status": False, "code": 404})
-        goods = store_models.Goods.objects.filter(pk=good_pk)
-        usergoods = models.UserGoods.objects.filter(goods=goods, user_cart=user)
-        if not usergoods.exists():
+        
+        cart_item_qs = models.UserCart.objects.filter(user=user, goods=goods)
+        if not cart_item_qs.exists():
             return Response({"status": False, "code": 400})
-        usergoods = usergoods.first()
-        if usergoods.count > 1:
-            usergoods.count =- 1
-            usergoods.save()
-            return Response({"status": True, "count":usergoods.count})
-        else:
-            usergoods.delete()
-        return Response({"status": True})
+        
+        # Видаляємо один запис (якщо їх декілька, видаляється лише перший знайдений)
+        cart_item_qs.first().delete()
+        count = models.UserCart.objects.filter(user=user).count()
+        return Response({"status": True, "count": count})
 
 
 class UserLogout(APIView):
