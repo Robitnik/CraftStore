@@ -12,5 +12,7 @@ urlpatterns = [
     path("api/rest/store/<str:store_slug>/goods/<str:goods_slug>", views.StoreGoodSet.as_view(), name="store_filter_url"),
     path("api/rest/goods", views.StoreGoodSet.as_view(), name="store_filter_url"),
     path("api/rest/goods/<int:goods_id>", views.StoreGoodSet.as_view(), name="store_filter_url"),
+    path("api/rest/goods/<int:goods_id>/reviews", views.GoodsReviewViewSet.as_view(), name="goods_reviews_url"),
+    path("api/rest/reviews/<int:review_id>", views.ReviewViewSet.as_view(), name="reviews_url"),
     path("api/rest/categories/filter", views.CategoryViewSet.as_view(), name="categories_filter_url"),
 ]

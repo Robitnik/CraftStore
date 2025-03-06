@@ -1,6 +1,8 @@
 from django.db import models
 from modules.serializers import get_serializer_for_model
 from modules.db.text import slugify
+from django.core.validators import MinValueValidator, MaxValueValidator
+
 
 class Store(models.Model):
     name = models.CharField(max_length=100, blank=True)
@@ -206,3 +208,33 @@ class SocialMedia(models.Model):
         fields = fields or ['name']
         data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
         return data.data
+
+
+
+class Review(models.Model):
+    author = models.ForeignKey("user.User", related_name="reviews", on_delete=models.SET_NULL, blank=True, null=True)
+    goods = models.ForeignKey("Goods", related_name="reviews", on_delete=models.SET_NULL, blank=True, null=True)
+    text = models.TextField(blank=True)
+    rating = models.PositiveSmallIntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(5)])
+    parent = models.ForeignKey('self', related_name='replies', on_delete=models.CASCADE, null=True, blank=True)
+    date_created = models.DateTimeField(auto_now_add=True, blank=True)
+    date_updated = models.DateTimeField(auto_now=True, blank=True)
+
+
+    def as_dict(self, fields=None):
+        fields = fields or ['author', 'text', 'rating', 'date_created', 'date_updated']
+        data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
+        data = dict(data.data)
+        data["author"] = self.author.as_mini_dict() if self.author else None
+        if self.replies and self.replies.count() > 0:
+            data["replies"] = [reply.as_dict() for reply in self.replies.all()[:3]]
+        return data
+
+    def as_mini_dict(self, fields=None):
+        fields = fields or ['author', 'text', 'rating', 'date_created', 'date_updated']
+        data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
+        data = dict(data.data)
+        data["author"] = self.author.as_mini_dict() if self.author else None
+        if self.parent:
+            data["parent"] = self.parent.as_dict()
+        return data

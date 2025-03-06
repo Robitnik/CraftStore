@@ -4,7 +4,7 @@ from django.contrib import admin
 
 from .models import (
     Store, Goods, Characteristic, CharacteristicNameType, 
-    Category, UserSocialMedia, SocialMedia
+    Category, UserSocialMedia, SocialMedia, Review
 )
 
 class StoreAdmin(admin.ModelAdmin):
@@ -48,6 +48,15 @@ class SocialMediaAdmin(admin.ModelAdmin):
     search_fields = ('name',)
 
 
+
+class ReviewAdmin(admin.ModelAdmin):
+    list_display = ('id', 'author', 'goods', 'rating', 'date_created', 'parent')
+    list_filter = ('rating', 'date_created', 'author', 'goods')
+    search_fields = ('author__username', 'goods__name', 'text')
+    ordering = ('-date_created',)
+
+
+
 admin.site.register(Store, StoreAdmin)
 admin.site.register(Goods, GoodsAdmin)
 admin.site.register(Characteristic, CharacteristicAdmin)
@@ -55,3 +64,4 @@ admin.site.register(CharacteristicNameType, CharacteristicNameTypeAdmin)
 admin.site.register(Category, CategoryAdmin)
 admin.site.register(UserSocialMedia, UserSocialMediaAdmin)
 admin.site.register(SocialMedia, SocialMediaAdmin)
+admin.site.register(Review, ReviewAdmin)
