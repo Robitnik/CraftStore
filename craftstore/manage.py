@@ -7,7 +7,7 @@ def bd():
     os.system("poetry run python manage.py migrate")
     os.system("clear")
     print("Міграції створенно")
-    exit()
+    exit(0)
 
 def main():
     if sys.argv[1] == "bd":

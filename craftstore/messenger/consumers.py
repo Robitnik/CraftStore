@@ -33,10 +33,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
         # Обробка повідомлень користувача
         data = json.loads(text_data)
         message = data.get("message")
+        images = data.get("images", [])
         if not message or not message.strip():
             await self.send(text_data=json.dumps({"status": False, "error": "Повідомлення пусте"}))
             return
-        message_obj = await utils.async_add_message(chat_slug=self.chat_slug, user=self.user, message=message)
+        message_obj = await utils.async_add_message(chat_slug=self.chat_slug, user=self.user, message=message, images=images)
         message_data = await sync_to_async(message_obj.as_dict)()
         await self.channel_layer.group_send(
             self.group_name,

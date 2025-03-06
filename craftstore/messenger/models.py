@@ -58,7 +58,8 @@ class Chat(models.Model):
 
 class Message(models.Model):
     chat = models.ForeignKey(Chat, related_name="messages", on_delete=models.CASCADE)
-    message = models.TextField()
+    message = models.TextField(blank=True)
+    images = models.ManyToManyField("cdn.Image", related_name="messages", blank=True)
     sender = models.ForeignKey("user.User", related_name="chat_messages", on_delete=models.SET_NULL, blank=True, null=True)
     read = models.BooleanField(default=False, db_index=True)
     send_date = models.DateTimeField(auto_now_add=True, db_index=True)

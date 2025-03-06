@@ -14,12 +14,14 @@ def get_chat_between_users(user1, user2):
 
 
 @sync_to_async
-def sync_add_message(chat_slug, user, message) -> models.Message:
+def sync_add_message(chat_slug, user, message, images) -> models.Message:
     chat = models.Chat.objects.get(slug=chat_slug)
     message_obj = models.Message(message=message, sender=user, chat=chat)
+    if images and len(images) > 0:
+        message_obj.images.add(*images)
     message_obj.save()
     return message_obj
 
 
-async def async_add_message(chat_slug, user, message) -> models.Message:
-    return await sync_add_message(chat_slug, user, message)
+async def async_add_message(chat_slug, user, message, images) -> models.Message:
+    return await sync_add_message(chat_slug, user, message, images)
