@@ -1,28 +1,25 @@
 from . import models
+from django.db.models import Count
 from asgiref.sync import sync_to_async
 
 
-def get_lasted_massege(chat_slug) -> dict:
-    chat = models.Chat.objects.get(slug=chat_slug)
-    last_massege = chat.masseges.filter(read=False).last()
-    return last_massege.as_dict()
 
-def get_lasted_masseges(chat_slug) -> list[dict]:
-    chat = models.Chat.objects.get(slug=chat_slug)
-    if chat.masseges.filter(read=False).exists():
-        last_masseges = chat.masseges.filter(read=False)
-        return [m.as_dict() for m in last_masseges]
-    return None
+def get_chat_between_users(user1, user2):
+    """
+    Повертає чат, який містить лише двох користувачів: user1 та user2.
+    Якщо такий чат існує, повертає його, інакше повертає None.
+    """
+    chat = models.Chat.objects.filter(members=user1).filter(members=user2).first()
+    return chat
 
 
 @sync_to_async
-def sync_add_message(chat_slug, user, message) -> models.Massage:
-    message_obj = models.Massage(massege=message, sender=user)
-    message_obj.save()    
+def sync_add_message(chat_slug, user, message) -> models.Message:
     chat = models.Chat.objects.get(slug=chat_slug)
-    chat.masseges.add(message_obj)
+    message_obj = models.Message(message=message, sender=user, chat=chat)
+    message_obj.save()
     return message_obj
 
 
-async def async_add_message(chat_slug, user, message) -> models.Massage:
+async def async_add_message(chat_slug, user, message) -> models.Message:
     return await sync_add_message(chat_slug, user, message)

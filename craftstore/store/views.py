@@ -10,6 +10,7 @@ from django.http import HttpResponse
 from .components import dbutils
 
 
+
 class Test(APIView):
     authentication_classes = []
     permission_classes = []
@@ -22,14 +23,16 @@ def main(request:HttpRequest):
 
 
 class GoodsViewFilter(APIView):
-    authentication_classes = []
     permission_classes = []
     def get(self, request, *args, **kwargs):
         model = models.Goods
-        queryset = object_filter(request=request, object=model.objects.all(), order=request.GET.get("order_by", "-date_published"))
+        queryset = object_filter(request=request, queryset=model.objects.all(), order=request.GET.get("order_by", "-date_published"))
         data = []
         for good in queryset:
-            data.append(good.as_mini_dict(fields=["id", "title", "slug", "price", "views_count", "description", "date_published", "date_updated"]))
+            good_data = good.as_mini_dict(fields=["id", "title", "slug", "price", "views_count", "description", "date_published", "date_updated"])
+            if request.user.is_authenticated:
+                good_data["user"] = good.user_info(request.user)
+            data.append(good_data)
         return Response(data, status=status.HTTP_200_OK)
 
 
@@ -64,7 +67,7 @@ class StoreViewSet(APIView):
     permission_classes = []
     def get(self, request: HttpRequest, *args, **kwargs):
         model = models.Store
-        queryset = object_filter(request=request, object=models.Store.objects.all())
+        queryset = object_filter(request=request, queryset=models.Store.objects.all())
         serializer = serializers.get_serializer_for_model(
             queryset=queryset,
             model=model,
@@ -75,10 +78,19 @@ class StoreViewSet(APIView):
 
 
 class StoreGoodSet(APIView):
-    permission_classes = [IsAuthenticated]
-    def get(self, request: HttpRequest):
-        # товари магазину
-        return Response({})
+    permission_classes = []
+    def get(self, request: HttpRequest, goods_id=None):
+        # Повна інформація.
+        if not goods_id:
+            return Response({"status": False, "code": 404}, status=404)
+        goods = models.Goods.objects.filter(pk=goods_id)
+        if not goods.exists():
+            return Response({"status": False, "code": 404}, status=404)
+        goods = models.Goods.objects.get(pk=goods_id)
+        data = goods.as_dict()
+        if request.user.is_authenticated:
+            data["user"] = goods.user_info(request.user)
+        return Response(data)
     def post(self, request: HttpRequest):
         user = request.user
         store = user.store
@@ -106,7 +118,6 @@ class StoreGoodSet(APIView):
 
 
 class GoodsViewSet(APIView):
-    authentication_classes = []
     permission_classes = []
     def get(self, request: HttpRequest, store_slug, goods_slug):
         if not  models.Goods.objects.filter(slug=goods_slug).exists():
@@ -122,7 +133,7 @@ class CategoryViewSet(APIView):
         if request.GET.get("id") and isinstance(request.GET.get("id"), int):
             queryset = models.Category.objects.filter(pk=request.GET.get("id"))
         else:
-            queryset = object_filter(request=request, object=models.Category.objects.all())
+            queryset = object_filter(request=request, queryset=models.Category.objects.all())
         data = {"count": queryset.count(), "results": []}
         if not queryset.exists():
             return Response({"status": False, "code": 404}, status=404)

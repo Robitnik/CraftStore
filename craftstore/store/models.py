@@ -52,10 +52,14 @@ class Goods(models.Model):
     author = models.ForeignKey("user.User", related_name="goods", on_delete=models.SET_NULL, null=True, blank=True)
     date_published = models.DateTimeField(auto_now_add=True, blank=True)
     date_updated = models.DateTimeField(auto_now=True, blank=True)
+
+
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(f"{self.title}-{self.pk}")
         super().save(*args, **kwargs)
+
+
     def __str__(self):
         return self.title
     
@@ -63,12 +67,13 @@ class Goods(models.Model):
     def as_dict(self, fields=None):
         fields = fields or ['id', 'slug', 'title', 'price', 'poster', 'description', 'views_count', 'bought_count', 'store', 'date_published', 'date_updated']
         data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
-        data.data["store"] = self.store.as_dict()
-        data.data["poster"] = self.poster.build_img_url() if self.poster else None
-        data.data['characteristic'] = [ch.as_dict() for ch in self.characteristic.all()]
-        data.data['category'] = [cat.as_dict() for cat in self.category.all()]
-        data.data['gallery'] = [img.build_img_url() for img in self.gallery.all()]
-        return data.data
+        data = dict(data.data)
+        data["store"] = self.store.as_dict()
+        data["poster"] = self.poster.build_img_url() if self.poster else None
+        data['characteristic'] = [ch.as_dict() for ch in self.characteristic.all()]
+        data['category'] = [cat.as_dict() for cat in self.category.all()]
+        data['gallery'] = [img.build_img_url() for img in self.gallery.all()]
+        return data
 
     def as_mini_dict(self, fields=None):
         fields = fields or ['id', 'slug', 'title', 'price', 'poster', 'views_count', 'store', 'date_published', 'date_updated']
@@ -77,6 +82,40 @@ class Goods(models.Model):
         data["poster"] = self.poster.build_img_url() if self.poster else None
         data["store"] = self.store.as_mini_dict()
         return data
+
+
+    def user_info(self, user):
+        """
+        Повертає інформацію про товар для заданого користувача.
+        """
+        info = {
+            "is_favorite": False,
+            "is_viewed": False,
+            "cart": {"is_in_cart": False, "quantity": 0}
+        }
+        # Якщо користувача немає або він не аутентифікований – повертаємо стандартне значення.
+        if not user or not user.is_authenticated:
+            return info
+
+        # Перевірка, чи товар є в улюблених.
+        # Припускаємо, що у користувача є related_name 'favorites' для моделі FavoriteItem.
+        if user.favorites.filter(goods=self).exists():
+            info["is_favorite"] = True
+
+        # Перевірка, чи товар є в історії переглядів.
+        # Припускаємо, що у користувача є related_name 'goods_history' для моделі HistoryItem.
+        if user.goods_history.filter(goods=self).exists():
+            info["is_viewed"] = True
+
+        # Перевірка, чи товар знаходиться в кошику.
+        # Припускаємо, що у користувача є related_name 'cart' для моделі UserCart,
+        # а модель UserCart містить поле 'quantity'.
+        cart_item = user.cart.filter(goods=self).first()
+        if cart_item:
+            info["cart"]["is_in_cart"] = True
+            info["cart"]["quantity"] = cart_item.quantity
+
+        return info
 
 
 class Characteristic(models.Model):

@@ -1,6 +1,6 @@
-#from django.http import HttpRequest
 from django.contrib.sessions.models import Session
 from .models import User
+from rest_framework.authtoken.models import Token
 
 
 def get_user(session_key=None, username=None):
@@ -18,12 +18,7 @@ def get_user(session_key=None, username=None):
         user = User.objects.filter(username=username).first()
     return user, its_me
 
-"""
-def get_user_by_request(request: HttpRequest) -> User:
-    session_key = str(request.headers.get("Authorization") or request.GET.get("token"))
-    user, its_me = get_user(session_key=session_key)
-    return user
-"""
+
 def get_user_by_request(request):
     return request.user if request.user.is_authenticated else None
 
@@ -31,3 +26,15 @@ def get_user_by_request(request):
 def get_user_by_session_key(session_key: str) -> User:
     user, _ = get_user(session_key=session_key)
     return user
+
+
+def get_user_by_token(token_key: str) -> User:
+    """
+    Повертає користувача, якщо існує токен з заданим ключем.
+    Використовує модель Token з DRF.
+    """
+    try:
+        token = Token.objects.get(key=token_key)
+        return token.user
+    except Token.DoesNotExist:
+        return None

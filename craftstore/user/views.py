@@ -13,7 +13,8 @@ from rest_framework.permissions import IsAuthenticated
 from cdn.models import Image
 from rest_framework.authtoken.models import Token
 from django.middleware.csrf import get_token
-
+from decimal import Decimal
+from django.db.models import Sum
 
 
 class UserLogin(APIView):
@@ -25,6 +26,9 @@ class UserLogin(APIView):
         password = request.data.get('password')
         user = authenticate(request, username=username, password=password)
         if user:
+            # Створюємо сесію для користувача
+            auth_login_user(request, user)
+            # Створюємо токен для користувача
             token, created = Token.objects.get_or_create(user=user)
             return Response({
                 "status": True,
@@ -111,7 +115,8 @@ class UserRegister(APIView):
 class UserEdit(APIView):
     permission_classes = [IsAuthenticated]
     def post(self, request: HttpRequest):
-        email_status, phone_status = False
+        email_status = False
+        phone_status = False
         email = request.data.get("email")
         phone_number = request.data.get('phone_number')
         username = request.data.get('username')
@@ -119,7 +124,7 @@ class UserEdit(APIView):
         last_name = request.data.get('last_name')
         avatar_id = request.data.get('avatar_id')
         user = request.user
-        if username:
+        if username and user.username!= username:
             if models.User.objects.filter(username=username).exists():
                 return Response({"status": False, "message": "Користувач з таким логіном вже існує"})
         if email:
@@ -202,13 +207,8 @@ class UserResetPassword(APIView):
 class User(APIView):
     permission_classes = [IsAuthenticated]
     def get(self, request, *args, **kwargs):
-        serializer = get_serializer_for_model(
-            queryset=request.user,
-            model=models.User,
-            fields=["avatar", "username", "first_name", "last_name", "is_active", "last_login", "date_joined"],
-            many=False
-        )
-        return Response(serializer.data)
+        data = request.user.as_mini_dict(fields=["username", "first_name", "last_name", "is_active", "last_login", "date_joined"])
+        return Response(data)
 
 
 class UserFavoritesAPI(APIView):
@@ -230,9 +230,9 @@ class UserFavoritesAPI(APIView):
 
     def post(self, request: HttpRequest):
         user = request.user
-        good_slug = request.data.get("good_slug")
+        good_id = request.data.get("good_id")
         try:
-            goods = store_models.Goods.objects.get(slug=good_slug)
+            goods = store_models.Goods.objects.get(id=good_id)
         except store_models.Goods.DoesNotExist:
             return Response({"status": False, "code": 404})
         
@@ -242,9 +242,9 @@ class UserFavoritesAPI(APIView):
 
     def delete(self, request: HttpRequest):
         user = request.user
-        good_slug = request.data.get("good_slug")
+        good_id = request.data.get("good_id")
         try:
-            goods = store_models.Goods.objects.get(slug=good_slug)
+            goods = store_models.Goods.objects.get(id=good_id)
         except store_models.Goods.DoesNotExist:
             return Response({"status": False, "code": 404})
         
@@ -276,49 +276,99 @@ class UserHistoryAPI(APIView):
 class UserCartAPI(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request: HttpRequest):
+    def get(self, request):
         user = request.user
-        cart_items = user.cart.all()
+        cart_items = user.cart.all()  # отримуємо всі записи кошика для користувача
+        total_sum = Decimal("0.00")
+        total_quantity = 0
+
+        items = []
+        for item in cart_items:
+            price = item.goods.price if item.goods and item.goods.price is not None else Decimal("0.00")
+            total_sum += price * item.quantity
+            total_quantity += item.quantity
+            goods_data = item.goods.as_mini_dict(
+                fields=["id", "slug", "poster",  "title", "price", "views_count", "date_published", "store"]
+            )
+            goods_data["quantity"] = item.quantity
+            items.append(goods_data)
+
         data = {
-            "count": cart_items.count(),
-            "goods": [
-                item.goods.as_mini_dict(
-                    fields=["poster", "slug", "title", "price", "views_count", "date_published", "store"]
-                )
-                for item in cart_items
-            ]
+            "items_count": cart_items.count(),
+            "total_sum": str(total_sum),
+            "goods": items
         }
         return Response(data)
 
-    def post(self, request: HttpRequest):
+    def post(self, request):
         user = request.user
-        good_pk = request.data.get("good_id")
+        good_id = request.data.get("good_id")
         try:
-            goods = store_models.Goods.objects.get(pk=good_pk)
+            goods = store_models.Goods.objects.get(pk=good_id)
         except store_models.Goods.DoesNotExist:
             return Response({"status": False, "code": 404})
         
-        # Додаємо новий запис для товару в кошику користувача
-        models.UserCart.objects.create(user=user, goods=goods)
-        count = models.UserCart.objects.filter(user=user).count()
-        return Response({"status": True, "count": count})
+        add_quantity = 1
 
-    def delete(self, request: HttpRequest):
+        # Якщо товар уже є в кошику – збільшуємо його quantity, інакше створюємо новий запис
+        cart_item, created = models.UserCart.objects.get_or_create(
+            user=user,
+            goods=goods,
+            defaults={"quantity": add_quantity}
+        )
+        if not created:
+            cart_item.quantity += add_quantity
+            cart_item.save()
+
+        # Обчислюємо оновлену сумарну вартість
+        cart_items = models.UserCart.objects.filter(user=user)
+        total_sum = sum(
+            item.goods.price * item.quantity
+            for item in cart_items
+            if item.goods and item.goods.price is not None
+        )
+        total_sum = str(total_sum)
+
+        return Response({
+            "status": True,
+            "quantity": cart_item.quantity,
+            "total_sum": total_sum
+        })
+
+    def delete(self, request):
         user = request.user
-        good_pk = request.data.get("good_id")
+        good_id = request.data.get("good_id")
         try:
-            goods = store_models.Goods.objects.get(pk=good_pk)
+            goods = store_models.Goods.objects.get(pk=good_id)
         except store_models.Goods.DoesNotExist:
             return Response({"status": False, "code": 404})
         
+        remove_quantity = 1
         cart_item_qs = models.UserCart.objects.filter(user=user, goods=goods)
         if not cart_item_qs.exists():
             return Response({"status": False, "code": 400})
+        quantity = 0
+        cart_item = cart_item_qs.first()
+        if cart_item.quantity > remove_quantity:
+            cart_item.quantity -= remove_quantity
+            cart_item.save()
+            quantity = cart_item.quantity
+        else:
+            cart_item.delete()
         
-        # Видаляємо один запис (якщо їх декілька, видаляється лише перший знайдений)
-        cart_item_qs.first().delete()
-        count = models.UserCart.objects.filter(user=user).count()
-        return Response({"status": True, "count": count})
+        # Обчислюємо оновлену сумарну вартість після змін
+        cart_items = models.UserCart.objects.filter(user=user)
+        total_sum = sum(
+            item.goods.price * item.quantity
+            for item in cart_items
+            if item.goods and item.goods.price is not None
+        )
+        total_sum = str(total_sum)
+        return Response({
+            "status": True,
+            "total_sum": total_sum,
+            "quantity": quantity,
+        })
 
 
 class UserLogout(APIView):

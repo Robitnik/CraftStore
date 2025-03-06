@@ -14,6 +14,7 @@ class User(AbstractUser):
     phone_number = models.CharField(max_length=1000, blank=True)
     user_gender = models.CharField(max_length=1000, blank=True)
     slug = models.SlugField(blank=True)
+
     def is_online(self):
         return True
 
@@ -38,30 +39,37 @@ class User(AbstractUser):
     def as_dict(self, fields=None):
         fields = fields or ['username', 'id', 'slug', 'avatar', 'address', 'phone_number', 'user_gender']
         data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
-        data.data['avatar'] = self.get_avatar_url()
-        data.data['groups'] = [group.as_mini_dict() for group in self.groups.all()]
-        data.data['favorites'] = [fav.as_dict() for fav in self.favorite_items.all()]
-        data.data['views_history'] = [view.as_dict() for view in self.history_items.all()]
-        data.data['cart'] = [item.as_dict() for item in self.cart_items.all()]
-        return data.data
+        data = dict(data.data)
+        data['avatar'] = self.get_avatar_url()
+        return data
 
     def as_mini_dict(self, fields=None):
         fields = fields or ['username', 'id', 'slug', 'avatar']
         data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
-        data.data['avatar'] = self.get_avatar_url()
-        return data.data
+        data = dict(data.data)
+        data['avatar'] = self.get_avatar_url()
+        return data
 
 
 class UserCart(models.Model):
     user = models.ForeignKey("User", related_name="cart", on_delete=models.CASCADE)
     goods = models.ForeignKey("store.Goods", on_delete=models.SET_NULL, blank=True, null=True)
     date_added = models.DateTimeField(auto_now_add=True)
+    quantity = models.PositiveIntegerField(default=1)  # кількість одиниць товару
 
     def as_dict(self, fields=None):
-        return {"date": self.date_added, "goods": self.goods.as_dict(fields)}
+        return {
+            "date": self.date_added,
+            "goods": self.goods.as_dict(fields),
+            "quantity": self.quantity
+        }
 
     def as_mini_dict(self, fields=None):
-        return {"date": self.date_added, "goods": self.goods.as_mini_dict(fields)}
+        return {
+            "date": self.date_added,
+            "goods": self.goods.as_mini_dict(fields),
+            "quantity": self.quantity
+        }
 
 
 class UserFavorite(models.Model):
