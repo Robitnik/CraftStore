@@ -69,7 +69,7 @@ class Message(models.Model):
         return self.send_date != self.edit_date
 
     def as_dict(self, fields=None):
-        fields = fields or ['message', 'read', 'send_date', 'edit_date']
+        fields = fields or ['id', 'message', 'read', 'send_date', 'edit_date']
         data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
         data = dict(data.data)
         data['sender'] = self.sender.as_mini_dict() if self.sender else None
@@ -77,7 +77,7 @@ class Message(models.Model):
         return data
 
     def as_mini_dict(self, fields=None):
-        fields = fields or ['message', 'read', 'send_date']
+        fields = fields or ['id', 'message', 'read', 'send_date']
         data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
         data = dict(data.data)
         return data
