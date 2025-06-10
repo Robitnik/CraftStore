@@ -12,4 +12,5 @@ urlpatterns = [
     path("api/rest/user/favorites", views.UserFavoritesAPI.as_view(), name="user_favorites_url"),
     path("api/rest/user/history", views.UserHistoryAPI.as_view(), name="user_history_url"),
     path("api/rest/user/cart", views.UserCartAPI.as_view(), name="user_history_url"),
+    path("api/rest/user/login/csrf", views.UserCsrf.as_view(), name="user_csrf_url"),
 ]

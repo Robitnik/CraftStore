@@ -79,7 +79,6 @@ class StoreViewSet(APIView):
 
 
 class StoreGoodSet(APIView):
-    permission_classes = []
     def get(self, request: HttpRequest, goods_id=None):
         # Повна інформація.
         if not goods_id:

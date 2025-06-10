@@ -35,7 +35,6 @@ def async_delete_message(message_id):
     return status
 
 
-@sync_to_async
 def sync_edit_message(message_id, new_message):
     message_obj = models.Message.objects.get(pk=message_id)
     message_obj.message = new_message

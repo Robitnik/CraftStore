@@ -22,7 +22,10 @@ class UserChatSet(APIView):
         data = {"count": chats.count(), "chats": []}
         for chat in chats:
             chat_dict = chat.as_dict()
-            chat_dict["opponent"] = chat.get_chat_user(request.user).as_mini_dict()
+            opponent_obj = chat.get_chat_user(request.user)
+            chat_dict["opponent"] = opponent_obj.as_mini_dict()
+            if opponent_obj and opponent_obj.has_store():
+                chat_dict["opponent"]["store"] = opponent_obj.store.as_mini_dict()
             chat_dict["last_message"] = chat.get_last_message()
             chat_dict["unread_message_count"] = chat.get_unread_message_count()
             data["chats"].append(chat_dict)
@@ -50,7 +53,7 @@ class UserChatSet(APIView):
         data = chat.as_dict()
         # Використовуємо метод get_chat_user для отримання співрозмовника
         opponent_obj = chat.get_chat_user(request.user)
-        data["opponent"] = opponent_obj.as_mini_dict() if opponent_obj else None
+        data["opponent"] = opponent_obj.as_mini_dict() if opponent_obj else None            
         return Response(data)
 
 
@@ -80,10 +83,10 @@ class ChatMessageSet(APIView):
             return Response({"status": False, "message": "Chat not found"}, status=404)
 
         # Отримання параметрів пагінації з POST-запиту
-        page = int(request.POST.get('page', 1))
+        page = int(request.data.get('page', 1))
         limit = 25
 
-        messages_qs = chat.messages.all().order_by('send_date')
+        messages_qs = chat.messages.all().order_by('pk')
         paginator = Paginator(messages_qs, limit)
 
         try:

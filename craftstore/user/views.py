@@ -372,10 +372,27 @@ class UserCartAPI(APIView):
 
 
 class UserLogout(APIView):
-    authentication_classes = []
-    permission_classes = []
     def post(self, request):
         if request.user.is_authenticated:
             auth_logout_user(request)
             return Response({"status": True})
         return Response({"status": False, "message": "User not authenticated"})
+
+
+
+class UserCsrf(APIView):
+    def get(self, request):
+        token = get_token(request)
+        return Response({"csrf_token": token})
+    def post(self, request):
+        token = request.data.get("token")
+        if not token:
+            return Response({"error": "Token не наданий"}, status=status.HTTP_400_BAD_REQUEST)
+        session_token = get_token(request)
+        if token == session_token:
+            token_status = True
+        else:
+            token_status = False
+        return Response({
+            "status": token_status,
+        })

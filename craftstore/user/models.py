@@ -17,6 +17,10 @@ class User(AbstractUser):
 
     def is_online(self):
         return True
+    def has_store(self):
+        from store.models import Store
+        return Store.objects.filter(owner=self).exists()
+
 
     def get_decrypt_cypher(self, cypher):
         if cypher:
@@ -41,6 +45,7 @@ class User(AbstractUser):
         data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
         data = dict(data.data)
         data['avatar'] = self.get_avatar_url()
+        data['has_store'] = self.has_store()
         return data
 
     def as_mini_dict(self, fields=None):
@@ -48,6 +53,7 @@ class User(AbstractUser):
         data = get_serializer_for_model(queryset=self, model=type(self), fields=fields, many=False)
         data = dict(data.data)
         data['avatar'] = self.get_avatar_url()
+        data['has_store'] = self.has_store()
         return data
 
 
