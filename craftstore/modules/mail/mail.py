@@ -15,8 +15,8 @@ class Email():
     def send_email(self):
         smtp_server = 'smtp.gmail.com'
         smtp_port = 465
-        sender_email = 'aniua.top@gmail.com'
-        sender_password = 'thpffoznpoqtnztu'
+        sender_email = ''
+        sender_password = ''
 
         message = MIMEMultipart("alternative")
         message['Subject'] = self.subject
